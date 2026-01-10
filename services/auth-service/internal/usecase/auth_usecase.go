@@ -320,5 +320,10 @@ func (u *authUseCase) ChangePassword(ctx context.Context, req *domain.ChangePass
 	user.UpdatedAt = time.Now()
 	// user.FailedLoginAttempts = 0 // Reset on password change?
 
-	return u.userRepo.Update(ctx, user)
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	// Revoke all existing sessions
+	return u.sessionRepo.DeleteByUserID(ctx, user.ID)
 }

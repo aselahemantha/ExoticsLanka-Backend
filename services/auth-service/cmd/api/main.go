@@ -52,7 +52,7 @@ func main() {
 
 	authUC := usecase.NewAuthUseCase(userRepo, sessionRepo, auditRepo, cfg)
 	authHandler := http.NewAuthHandler(authUC)
-	authMiddleware := http.NewAuthMiddleware(cfg)
+	authMiddleware := http.NewAuthMiddleware(cfg, sessionRepo)
 
 	// 5. Setup Router
 	router := gin.Default()

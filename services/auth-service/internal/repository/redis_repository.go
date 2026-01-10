@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/exoticsLanka/auth-service/internal/domain"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -26,7 +27,16 @@ func (r *redisSessionRepository) Create(ctx context.Context, session *domain.Ses
 	}
 
 	key := fmt.Sprintf("session:%s", session.Token)
-	return r.client.Set(ctx, key, data, time.Until(session.ExpiresAt)).Err()
+	pipe := r.client.Pipeline()
+	pipe.Set(ctx, key, data, time.Until(session.ExpiresAt))
+
+	// Add token to user's session set
+	userKey := fmt.Sprintf("user_sessions:%s", session.UserID.String())
+	pipe.SAdd(ctx, userKey, session.Token)
+	pipe.Expire(ctx, userKey, time.Until(session.ExpiresAt)) // Refresh expiry of set
+
+	_, err = pipe.Exec(ctx)
+	return err
 }
 
 func (r *redisSessionRepository) GetByToken(ctx context.Context, token string) (*domain.Session, error) {
@@ -47,6 +57,50 @@ func (r *redisSessionRepository) GetByToken(ctx context.Context, token string) (
 }
 
 func (r *redisSessionRepository) Delete(ctx context.Context, token string) error {
+	// We need to resolve userID to remove from set, but that's expensive if we don't have the session.
+	// Alternative: Get session first, then delete both.
+	// Or: Leave it as orphaned in the set (it will expire eventually or handle it on access).
+	// For consistence, let's try to get it.
+
+	session, err := r.GetByToken(ctx, token)
+	if err != nil {
+		return err // Or ignore if nil?
+	}
+	if session == nil {
+		return nil // Already deleted
+	}
+
 	key := fmt.Sprintf("session:%s", token)
-	return r.client.Del(ctx, key).Err()
+	userKey := fmt.Sprintf("user_sessions:%s", session.UserID.String())
+
+	pipe := r.client.Pipeline()
+	pipe.Del(ctx, key)
+	pipe.SRem(ctx, userKey, token)
+	_, err = pipe.Exec(ctx)
+	return err
+}
+
+func (r *redisSessionRepository) DeleteByUserID(ctx context.Context, userID uuid.UUID) error {
+	userKey := fmt.Sprintf("user_sessions:%s", userID.String())
+
+	// Get all tokens
+	tokens, err := r.client.SMembers(ctx, userKey).Result()
+	if err != nil {
+		return err
+	}
+
+	if len(tokens) == 0 {
+		return nil
+	}
+
+	pipe := r.client.Pipeline()
+	// Delete all session keys
+	for _, token := range tokens {
+		pipe.Del(ctx, fmt.Sprintf("session:%s", token))
+	}
+	// Delete the set itself
+	pipe.Del(ctx, userKey)
+
+	_, err = pipe.Exec(ctx)
+	return err
 }

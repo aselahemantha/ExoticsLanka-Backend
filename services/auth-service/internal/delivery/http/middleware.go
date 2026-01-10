@@ -5,18 +5,21 @@ import (
 	"strings"
 
 	"github.com/exoticsLanka/auth-service/internal/config"
+	"github.com/exoticsLanka/auth-service/internal/domain"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
 
 type AuthMiddleware struct {
-	cfg *config.Config
+	cfg         *config.Config
+	sessionRepo domain.SessionRepository
 }
 
-func NewAuthMiddleware(cfg *config.Config) *AuthMiddleware {
+func NewAuthMiddleware(cfg *config.Config, sessionRepo domain.SessionRepository) *AuthMiddleware {
 	return &AuthMiddleware{
-		cfg: cfg,
+		cfg:         cfg,
+		sessionRepo: sessionRepo,
 	}
 }
 
@@ -34,12 +37,24 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 			return
 		}
 
+		// 1. Verify JWT Signature and Claims
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			return []byte(m.cfg.JWTSecret), nil
 		})
 
 		if err != nil || !token.Valid {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			return
+		}
+
+		// 2. Check if session is active in Redis (Session Revocation Check)
+		session, err := m.sessionRepo.GetByToken(c.Request.Context(), tokenString)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Session validation failed"})
+			return
+		}
+		if session == nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Session expired or revoked"})
 			return
 		}
 

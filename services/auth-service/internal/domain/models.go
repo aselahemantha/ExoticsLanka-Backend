@@ -87,6 +87,7 @@ type SessionRepository interface {
 	Create(ctx context.Context, session *Session) error
 	GetByToken(ctx context.Context, token string) (*Session, error)
 	Delete(ctx context.Context, token string) error
+	DeleteByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
 // AuditRepository defines methods for audit logs
