@@ -1,0 +1,57 @@
+### Register
+POST http://localhost:8081/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "role": "buyer"
+}
+
+### Login
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+client.global.set("refresh_token", response.body.refresh_token);
+%}
+
+### Get Me (Protected)
+GET http://localhost:8081/api/auth/me
+Authorization: Bearer {{auth_token}}
+
+### Refresh Token
+POST http://localhost:8081/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+### Change Password
+POST http://localhost:8081/api/auth/change-password
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+    "current_password": "Password123!",
+    "new_password": "NewPassword123!"
+}
+
+### Logout
+POST http://localhost:8081/api/auth/logout
+Authorization: Bearer {{auth_token}}
+
+### Forgot Password
+POST http://localhost:8081/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
