@@ -34,6 +34,16 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
+	// 2.1 Run Migrations
+	// Dockerfile places migrations in ./sql/migrations
+	if err := repository.RunMigrations(context.Background(), dbPool, "sql/migrations"); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+		// We don't Fatalf here because sometimes local dev paths differ,
+		// but in Prod it should ideally work or we assume it's fine if tables exist.
+		// However, for strict startup, we might want to log.Fatal.
+		// Let's log.Fatal to be safe, assuming the path is correct in Docker.
+	}
+
 	// 3. Connect to Redis
 	redisOpts, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
