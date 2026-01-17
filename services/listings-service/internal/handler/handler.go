@@ -29,16 +29,16 @@ func (h *Handler) CreateListing(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (assuming auth middleware sets it)
-	// For now using a hardcoded or header-based ID for testing if no auth middleware
-	userIDStr := c.GetHeader("X-User-ID")
-	if userIDStr == "" {
-		// fallback for dev/testing
-		userIDStr = "00000000-0000-0000-0000-000000000000"
-	}
-	userID, err := uuid.Parse(userIDStr)
+	// Get user ID from legacy header or fall back to context auth
+	// Ideally we switch entirely to GetUserID
+	userID, err := GetUserID(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID"})
+		// Fallback for transition or dev (if desired), otherwise:
+		// c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		// return
+
+		// For now, let's strictly require auth via middleware
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 

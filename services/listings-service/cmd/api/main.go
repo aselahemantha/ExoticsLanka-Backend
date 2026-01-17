@@ -60,6 +60,7 @@ func main() {
 	})
 
 	api := router.Group("/api")
+	api.Use(handler.AuthMiddleware(cfg))
 	{
 		// Listings
 		api.POST("/listings", h.CreateListing)
