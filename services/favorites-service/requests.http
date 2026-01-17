@@ -1,0 +1,74 @@
+### Login (Auth Service)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Favorite Test Car",
+  "make": "TestMake",
+  "model": "TestModel",
+  "year": 2024,
+  "price": 50000000,
+  "mileage": 1000,
+  "condition": "Used",
+  "transmission": "Automatic",
+  "fuelType": "Petrol",
+  "bodyType": "Coupe",
+  "color": "Red",
+  "doors": 2,
+  "seats": 2,
+  "engineSize": "3.0L",
+  "drivetrain": "RWD",
+  "description": "For testing favorites",
+  "location": "Colombo",
+  "contactPhone": "123",
+  "contactEmail": "test@example.com",
+  "features": ["Test Feature"]
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Add to Favorites
+POST http://localhost:8083/api/favorites/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Check if Favorited
+GET http://localhost:8083/api/favorites/check/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Get Favorites
+GET http://localhost:8083/api/favorites
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Get Favorites Count
+GET http://localhost:8083/api/favorites/count
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Remove Favorite
+DELETE http://localhost:8083/api/favorites/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Clear All Favorites
+DELETE http://localhost:8083/api/favorites
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
