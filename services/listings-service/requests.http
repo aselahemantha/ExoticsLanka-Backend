@@ -1,0 +1,59 @@
+### Create Listing
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+X-User-ID: 550e8400-e29b-41d4-a716-446655440000
+
+{
+  "title": "Mercedes-Benz S-Class S500",
+  "make": "Mercedes-Benz",
+  "model": "S-Class S500",
+  "year": 2023,
+  "price": 85000000,
+  "mileage": 12000,
+  "condition": "Used - Like New",
+  "transmission": "Automatic",
+  "fuelType": "Petrol",
+  "bodyType": "Sedan",
+  "color": "Midnight Black",
+  "doors": 4,
+  "seats": 5,
+  "engineSize": "4.0L",
+  "drivetrain": "RWD",
+  "description": "This exceptional Mercedes-Benz S-Class represents...",
+  "location": "Colombo 07",
+  "contactPhone": "+94771234567",
+  "contactEmail": "dealer@example.com",
+  "features": [
+    "Leather Seats",
+    "Sunroof",
+    "Navigation System"
+  ]
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Get All Listings
+GET http://localhost:8082/api/listings
+Content-Type: application/json
+
+### Get All Listings (Search & Filter)
+GET http://localhost:8082/api/listings?search=Mercedes&minPrice=10000000
+Content-Type: application/json
+
+### Get Listing By ID
+GET http://localhost:8082/api/listings/{{listing_id}}
+Content-Type: application/json
+
+### Get Featured Listings
+GET http://localhost:8082/api/listings/featured
+Content-Type: application/json
+
+### Get Trending Listings
+GET http://localhost:8082/api/listings/trending
+Content-Type: application/json
+
+### Get Brands
+GET http://localhost:8082/api/brands
+Content-Type: application/json
