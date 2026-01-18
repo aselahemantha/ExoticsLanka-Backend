@@ -1,0 +1,89 @@
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+client.global.set("seller_id", response.body.user.id);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Chattable Car",
+  "make": "ChatMake",
+  "model": "ChatModel",
+  "year": 2024,
+  "price": 12000000,
+  "mileage": 100
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Create Conversation (Buyer -> Seller)
+POST http://localhost:8085/api/conversations
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "{{seller_id}}",
+  "initialMessage": "Is this car still available? I am interested."
+}
+
+> {%
+client.global.set("conversation_id", response.body.data.id);
+%}
+
+### Get Buyer Conversations
+GET http://localhost:8085/api/conversations
+Authorization: Bearer {{buyer_token}}
+
+### Get Seller Conversations (Should see unread)
+GET http://localhost:8085/api/conversations
+Authorization: Bearer {{seller_token}}
+
+### Get Unread Count (Seller)
+GET http://localhost:8085/api/messages/unread-count
+Authorization: Bearer {{seller_token}}
+
+### Reply (Seller -> Buyer)
+POST http://localhost:8085/api/conversations/{{conversation_id}}/messages
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "content": "Yes, it is availability. When would you like to see it?"
+}
+
+### Read Conversation (Buyer reads reply)
+PUT http://localhost:8085/api/conversations/{{conversation_id}}/read
+Authorization: Bearer {{buyer_token}}
+
+### Get Messages (Conversation Detail)
+GET http://localhost:8085/api/conversations/{{conversation_id}}
+Authorization: Bearer {{buyer_token}}

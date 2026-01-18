@@ -4,4 +4,6 @@ use (
 	./services/auth-service
 	./services/listings-service
 	./services/favorites-service
+	./services/reviews-service
+	./services/messaging-service
 )

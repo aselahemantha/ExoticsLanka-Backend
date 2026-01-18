@@ -1,0 +1,94 @@
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+client.global.set("seller_id", response.body.user.id);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Reviewable Car",
+  "make": "ReviewMake",
+  "model": "ReviewModel",
+  "year": 2024,
+  "price": 10000000,
+  "mileage": 500
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Create Review
+POST http://localhost:8084/api/reviews
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "{{seller_id}}",
+  "rating": 5,
+  "title": "Great Seller!",
+  "comment": "Had a wonderful experience buying this car.",
+  "photos": ["http://example.com/photo1.jpg"]
+}
+
+> {%
+client.global.set("review_id", response.body.data.id);
+%}
+
+### Get Seller Reviews
+GET http://localhost:8084/api/reviews/seller/{{seller_id}}
+Authorization: Bearer {{buyer_token}}
+
+### Get Seller Stats
+GET http://localhost:8084/api/reviews/seller/{{seller_id}}/stats
+
+### Toggle Helpful (Self vote allowed in implementation, strictly)
+POST http://localhost:8084/api/reviews/{{review_id}}/helpful
+Authorization: Bearer {{buyer_token}}
+
+### Note: Seller Response requires Seller Token
+POST http://localhost:8084/api/reviews/{{review_id}}/response
+Authorization: Bearer {{seller_token}}
+
+{
+  "comment": "Thanks for the feedback!"
+}
+
+### Add Photo
+POST http://localhost:8084/api/reviews/{{review_id}}/photos
+Authorization: Bearer {{buyer_token}}
+
+{
+  "url": "http://example.com/photo2.jpg"
+}
+
+### Delete Review
+DELETE http://localhost:8084/api/reviews/{{review_id}}
+Authorization: Bearer {{buyer_token}}
