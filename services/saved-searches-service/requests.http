@@ -1,0 +1,103 @@
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+%}
+
+### Create Matchable Listing (Seller)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Alert Car BMW",
+  "make": "BMW",
+  "model": "X5",
+  "year": 2023,
+  "price": 35000000,
+  "mileage": 5000,
+  "fuelType": "Petrol"
+}
+
+> {%
+client.global.set("listing_id_1", response.body.data.id);
+%}
+
+### Create Saved Search (Buyer - Should match above)
+POST http://localhost:8086/api/searches
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "name": "My BMW Search",
+  "filters": {
+    "searchQuery": "",
+    "brands": ["BMW"],
+    "priceRange": [0, 50000000],
+    "yearRange": [2020, 2024],
+    "mileageRange": [0, 100000],
+    "fuelTypes": [],
+    "transmissions": [],
+    "bodyTypes": [],
+    "locations": [],
+    "condition": []
+  },
+  "alertEnabled": true,
+  "alertFrequency": "daily"
+}
+
+> {%
+client.global.set("search_id", response.body.data.id);
+%}
+
+### Get Saved Searches (Verify Count)
+GET http://localhost:8086/api/searches
+Authorization: Bearer {{buyer_token}}
+
+### Run Search (Directly see results)
+POST http://localhost:8086/api/searches/{{search_id}}/run
+Authorization: Bearer {{buyer_token}}
+
+### Create New Matching Listing (Seller)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "New Alert Car BMW",
+  "make": "BMW",
+  "model": "X7",
+  "year": 2024,
+  "price": 45000000,
+  "mileage": 1000,
+  "fuelType": "Diesel"
+}
+
+### Check For New Matches (Buyer)
+POST http://localhost:8086/api/searches/{{search_id}}/check
+Authorization: Bearer {{buyer_token}}
+
+### Get New Matches Overview
+GET http://localhost:8086/api/searches/new-matches
+Authorization: Bearer {{buyer_token}}

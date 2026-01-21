@@ -6,4 +6,5 @@ use (
 	./services/favorites-service
 	./services/reviews-service
 	./services/messaging-service
+	./services/saved-searches-service
 )
