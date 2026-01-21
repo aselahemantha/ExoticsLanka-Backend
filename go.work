@@ -10,4 +10,5 @@ use (
 	./services/reports-service
 	./services/contact-service
 	./services/analytics-service
+	./services/comparison-service
 )

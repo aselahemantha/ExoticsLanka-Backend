@@ -1,0 +1,52 @@
+### Login User
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Add to Comparison 1
+POST http://localhost:8090/api/comparison/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 2 (Use different ID - Mock if DB empty or use real IDs)
+POST http://localhost:8090/api/comparison/b2c3d4e5-f678-9012-3456-7890abcdef12
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 3
+POST http://localhost:8090/api/comparison/c3d4e5f6-7890-1234-5678-90abcdef1234
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 4
+POST http://localhost:8090/api/comparison/d4e5f678-9012-3456-7890-abcdef123456
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 5 (Should Fail)
+POST http://localhost:8090/api/comparison/e5f67890-1234-5678-90ab-cdef12345678
+Authorization: Bearer {{user_token}}
+
+### Get Comparison List
+GET http://localhost:8090/api/comparison
+Authorization: Bearer {{user_token}}
+
+### Check Status
+GET http://localhost:8090/api/comparison/check/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Compare View
+GET http://localhost:8090/api/comparison/compare
+Authorization: Bearer {{user_token}}
+
+### Remove Item
+DELETE http://localhost:8090/api/comparison/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Clear All
+DELETE http://localhost:8090/api/comparison
+Authorization: Bearer {{user_token}}
