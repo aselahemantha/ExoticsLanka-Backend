@@ -1,0 +1,114 @@
+### Login Reporter (Regular User)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("reporter_token", response.body.access_token);
+client.global.set("reporter_id", response.body.user.id);
+%}
+
+### Login Admin
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("admin_token", response.body.access_token);
+client.global.set("admin_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+%}
+
+### Create Listing (Target for Report)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "To Be Reported Car",
+  "make": "Toyota",
+  "model": "Vitz",
+  "year": 2018,
+  "price": 6500000,
+  "mileage": 45000,
+  "fuelType": "Petrol"
+}
+
+> {%
+client.global.set("listing_id_report", response.body.data.id);
+%}
+
+### Submit Report (User)
+POST http://localhost:8087/api/reports
+Content-Type: application/json
+Authorization: Bearer {{reporter_token}}
+
+{
+  "listingId": "{{listing_id_report}}",
+  "reason": "misleading",
+  "details": "The price is suspicious for this model."
+}
+
+> {%
+client.global.set("report_id", response.body.data.id);
+%}
+
+### Submit Duplicate Report (User) - Should Fail 409
+POST http://localhost:8087/api/reports
+Content-Type: application/json
+Authorization: Bearer {{reporter_token}}
+
+{
+  "listingId": "{{listing_id_report}}",
+  "reason": "spam",
+  "details": "Trying again..."
+}
+
+### Get Reports (Admin)
+GET http://localhost:8087/api/reports?status=pending
+Authorization: Bearer {{admin_token}}
+
+### Get Report Detail (Admin)
+GET http://localhost:8087/api/reports/{{report_id}}
+Authorization: Bearer {{admin_token}}
+
+### Get Stats (Admin)
+GET http://localhost:8087/api/reports/stats
+Authorization: Bearer {{admin_token}}
+
+### Resolve Report (Admin) - Remove Listing
+PUT http://localhost:8087/api/reports/{{report_id}}
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "resolved",
+  "adminNotes": "Confirmed misleading price. Removing listing.",
+  "actionTaken": "listing_removed"
+}
+
+### Verify Listing Status (Should be 'rejected' or similar)
+# We can check this by trying to view it or checking report detail again where we embedded listing info (though status on embedded might be old if not refreshed).
+# Better to check listings service directly if possible, or trust the report service executed the DB update.
+GET http://localhost:8082/api/listings/{{listing_id_report}}
+Authorization: Bearer {{reporter_token}}
