@@ -9,4 +9,5 @@ use (
 	./services/saved-searches-service
 	./services/reports-service
 	./services/contact-service
+	./services/analytics-service
 )

@@ -1,0 +1,69 @@
+### Login Dealer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("dealer_token", response.body.access_token);
+client.global.set("dealer_id", response.body.user.id);
+%}
+
+### Login Regular User (Visitor)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Track View Event (Authenticated User)
+POST http://localhost:8089/api/analytics/track
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+  "listingId": "a1b2c3d4-e5f6-7890-1234-567890abcdef", 
+  "eventType": "view",
+  "sessionId": "session-123",
+  "referrer": "google.com"
+}
+# Note: listingId needs to be valid UUID, ideally existing one. 
+# Providing valid UUID format but might fail FK constraint if not in DB.
+# For isolation test, ensure DB has listing or loose constraint (DB constraints are strict)
+# We assume listing exists from previous tests or manual seed.
+# If FK fails, this test fails 500.
+
+### Track Contact Event (Anonymous)
+POST http://localhost:8089/api/analytics/track
+Content-Type: application/json
+
+{
+  "listingId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "eventType": "contact_view",
+  "sessionId": "session-456"
+}
+
+### Trigger Aggregation (Admin/Dealer manual trigger)
+POST http://localhost:8089/api/analytics/jobs/aggregate
+Authorization: Bearer {{dealer_token}}
+
+### Get Dashboard Overview
+GET http://localhost:8089/api/analytics/overview?period=30d
+Authorization: Bearer {{dealer_token}}
+
+### Get Insights
+GET http://localhost:8089/api/analytics/insights
+Authorization: Bearer {{dealer_token}}
+
+### Get Inventory Performance
+GET http://localhost:8089/api/analytics/inventory
+Authorization: Bearer {{dealer_token}}
