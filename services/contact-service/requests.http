@@ -1,0 +1,96 @@
+### Login Admin
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("admin_token", response.body.access_token);
+%}
+
+### Login Regular User (Optional link)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Submit Inquiry (Anonymous)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{
+  "name": "Anonymous Visitor",
+  "email": "visitor@example.com",
+  "phone": "0771234567",
+  "subject": "general",
+  "message": "I have a question about fees."
+}
+
+> {%
+client.global.set("inquiry_id_1", response.body.data.id);
+%}
+
+### Submit Inquiry (Authenticated)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+  "name": "Registered User",
+  "email": "user@example.com",
+  "subject": "support",
+  "message": "I need help with my account."
+}
+
+> {%
+client.global.set("inquiry_id_2", response.body.data.id);
+%}
+
+### Submit Urgent Complaint (Priority Check)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{
+  "name": "Angry User",
+  "email": "angry@example.com",
+  "subject": "complaint",
+  "message": "This is unacceptable service!"
+}
+
+### Rate Limit Test (Submit 5 more times quickly)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{ "name": "Spammer", "email": "spammer@example.com", "subject": "other", "message": "Spam 1" }
+
+### Get Inquiries (Admin)
+GET http://localhost:8088/api/contact?status=pending
+Authorization: Bearer {{admin_token}}
+
+### Get Inquiry Detail (Admin)
+GET http://localhost:8088/api/contact/{{inquiry_id_1}}
+Authorization: Bearer {{admin_token}}
+
+### Respond Inquiry (Admin)
+PUT http://localhost:8088/api/contact/{{inquiry_id_1}}
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "responded",
+  "adminResponse": "Hello, fees are 5%."
+}
+
+### Get Stats (Admin)
+GET http://localhost:8088/api/contact/stats
+Authorization: Bearer {{admin_token}}
