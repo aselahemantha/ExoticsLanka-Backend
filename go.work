@@ -1,15 +1,16 @@
 go 1.25.5
 
 use (
-	./services/auth-service
-	./services/listings-service
-	./services/favorites-service
-	./services/reviews-service
-	./services/messaging-service
-	./services/saved-searches-service
-	./services/reports-service
-	./services/contact-service
 	./services/analytics-service
+	./services/auth-service
 	./services/comparison-service
+	./services/contact-service
+	./services/favorites-service
 	./services/image-service
+	./services/listings-service
+	./services/messaging-service
+	./services/notification-service
+	./services/reports-service
+	./services/reviews-service
+	./services/saved-searches-service
 )
