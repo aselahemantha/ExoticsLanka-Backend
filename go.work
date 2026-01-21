@@ -11,4 +11,5 @@ use (
 	./services/contact-service
 	./services/analytics-service
 	./services/comparison-service
+	./services/image-service
 )
