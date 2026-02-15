@@ -29,7 +29,7 @@ RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/main .
 
 # Copy migration files (if they exist)
-COPY sql/migrations ./sql/migrations
+COPY migrations ./migrations
 
 # Expose port
 EXPOSE 8080
