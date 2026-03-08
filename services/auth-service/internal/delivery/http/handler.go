@@ -27,6 +27,7 @@ func (h *AuthHandler) RegisterRoutes(router *gin.Engine, authMiddleware *AuthMid
 		auth.POST("/login", h.Login)
 		auth.POST("/refresh", h.RefreshToken)
 		auth.POST("/verify-email", h.VerifyEmail)
+		auth.POST("/resend-verification", h.ResendVerification)
 		auth.POST("/forgot-password", h.ForgotPassword)
 		auth.POST("/reset-password", h.ResetPassword)
 
@@ -150,6 +151,21 @@ func (h *AuthHandler) VerifyEmail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully"})
+}
+
+func (h *AuthHandler) ResendVerification(c *gin.Context) {
+	var req domain.ResendVerificationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.authUseCase.ResendVerification(c.Request.Context(), &req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "If email exists and is unverified, a new verification link was sent"})
 }
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {

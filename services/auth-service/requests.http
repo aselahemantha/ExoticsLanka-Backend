@@ -3,6 +3,7 @@ POST http://localhost:8081/api/auth/register
 Content-Type: application/json
 
 {
+  "name": "Test User",
   "email": "user@example.com",
   "password": "Password123!",
   "role": "buyer"
@@ -50,6 +51,31 @@ Authorization: Bearer {{auth_token}}
 
 ### Forgot Password
 POST http://localhost:8081/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Reset Password
+POST http://localhost:8081/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "your-reset-token-here",
+  "new_password": "NewPassword123!"
+}
+
+### Verify Email
+POST http://localhost:8081/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "your-verification-token-here"
+}
+
+### Resend Verification
+POST http://localhost:8081/api/auth/resend-verification
 Content-Type: application/json
 
 {

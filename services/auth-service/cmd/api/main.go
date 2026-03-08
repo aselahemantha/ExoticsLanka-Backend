@@ -59,8 +59,9 @@ func main() {
 	userRepo := repository.NewPostgresUserRepository(dbPool)
 	auditRepo := repository.NewPostgresAuditRepository(dbPool)
 	sessionRepo := repository.NewRedisSessionRepository(rdb)
+	tokenRepo := repository.NewPostgresTokenRepository(dbPool)
 
-	authUC := usecase.NewAuthUseCase(userRepo, sessionRepo, auditRepo, cfg)
+	authUC := usecase.NewAuthUseCase(userRepo, sessionRepo, auditRepo, tokenRepo, cfg)
 	authHandler := http.NewAuthHandler(authUC)
 	authMiddleware := http.NewAuthMiddleware(cfg, sessionRepo)
 

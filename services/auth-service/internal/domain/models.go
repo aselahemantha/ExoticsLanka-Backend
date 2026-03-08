@@ -11,6 +11,7 @@ import (
 type User struct {
 	ID                  uuid.UUID  `json:"id" db:"id"`
 	Email               string     `json:"email" db:"email"`
+	Name                *string    `json:"name" db:"name"`
 	PasswordHash        string     `json:"-" db:"password_hash"`
 	Status              string     `json:"status" db:"status"` // pending, active, suspended, deleted
 	EmailVerified       bool       `json:"email_verified" db:"email_verified"`
@@ -95,14 +96,22 @@ type AuditRepository interface {
 	Create(ctx context.Context, log *AuditLog) error
 }
 
+// TokenRepository defines methods for verification tokens
+type TokenRepository interface {
+	Create(ctx context.Context, token *VerificationToken) error
+	GetByToken(ctx context.Context, token string) (*VerificationToken, error)
+	MarkAsUsed(ctx context.Context, id uuid.UUID) error
+}
+
 // AuthUseCase defines the business logic for authentication
 type AuthUseCase interface {
-	Register(ctx context.Context, req *RegisterRequest) (*RegisterResponse, error)
+	Register(ctx context.Context, req *RegisterRequest) (*LoginResponse, error)
 	Login(ctx context.Context, req *LoginRequest) (*LoginResponse, error)
 	Logout(ctx context.Context, token string) error
 	RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error)
 	GetMe(ctx context.Context, userID uuid.UUID) (*UserResponse, error)
 	VerifyEmail(ctx context.Context, token string) error
+	ResendVerification(ctx context.Context, req *ResendVerificationRequest) error
 	ForgotPassword(ctx context.Context, email string) error
 	ResetPassword(ctx context.Context, req *ResetPasswordRequest) error
 	ChangePassword(ctx context.Context, req *ChangePasswordRequest) error
@@ -110,18 +119,12 @@ type AuthUseCase interface {
 
 // DTOs for UseCases
 type RegisterRequest struct {
+	Name      string `json:"name" binding:"required"`
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
 	Role      string `json:"role"`
 	IPAddress string `json:"-"`
 	UserAgent string `json:"-"`
-}
-
-type RegisterResponse struct {
-	ID     uuid.UUID `json:"id"`
-	Email  string    `json:"email"`
-	Role   string    `json:"role"`
-	Status string    `json:"status"`
 }
 
 type LoginRequest struct {
@@ -139,9 +142,12 @@ type LoginResponse struct {
 }
 
 type UserResponse struct {
-	ID    uuid.UUID `json:"id"`
-	Email string    `json:"email"`
-	Role  string    `json:"role"`
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Role      string    `json:"role"`
+	Verified  bool      `json:"verified"`
+	CreatedAt time.Time `json:"createdAt"`
 }
 
 type RefreshTokenRequest struct {
@@ -150,6 +156,10 @@ type RefreshTokenRequest struct {
 
 type VerifyEmailRequest struct {
 	Token string `json:"token" binding:"required"`
+}
+
+type ResendVerificationRequest struct {
+	Email string `json:"email" binding:"required,email"`
 }
 
 type ForgotPasswordRequest struct {

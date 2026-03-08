@@ -16,6 +16,7 @@ type authUseCase struct {
 	userRepo    domain.UserRepository
 	sessionRepo domain.SessionRepository
 	auditRepo   domain.AuditRepository
+	tokenRepo   domain.TokenRepository
 	cfg         *config.Config
 }
 
@@ -24,17 +25,19 @@ func NewAuthUseCase(
 	userRepo domain.UserRepository,
 	sessionRepo domain.SessionRepository,
 	auditRepo domain.AuditRepository,
+	tokenRepo domain.TokenRepository,
 	cfg *config.Config,
 ) domain.AuthUseCase {
 	return &authUseCase{
 		userRepo:    userRepo,
 		sessionRepo: sessionRepo,
 		auditRepo:   auditRepo,
+		tokenRepo:   tokenRepo,
 		cfg:         cfg,
 	}
 }
 
-func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest) (*domain.RegisterResponse, error) {
+func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest) (*domain.LoginResponse, error) {
 	// 1. Check if user exists
 	existingUser, err := u.userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
@@ -56,6 +59,7 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 	user := &domain.User{
 		ID:           userID,
 		Email:        req.Email,
+		Name:         &req.Name,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
 		Status:       "pending",
@@ -70,7 +74,22 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 		return nil, err
 	}
 
-	// 4. Log audit
+	// 4. Create verification token
+	tokenStr := uuid.New().String()
+	vToken := &domain.VerificationToken{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		Token:     tokenStr,
+		TokenHash: tokenStr, // In real world hash this
+		Type:      "email_verification",
+		ExpiresAt: now.Add(24 * time.Hour),
+		IPAddress: &req.IPAddress,
+		UserAgent: &req.UserAgent,
+		CreatedAt: now,
+	}
+	_ = u.tokenRepo.Create(ctx, vToken)
+
+	// 5. Log audit
 	_ = u.auditRepo.Create(ctx, &domain.AuditLog{
 		UserID:        &userID,
 		EventType:     "account_created",
@@ -82,11 +101,50 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 		CreatedAt:     now,
 	})
 
-	return &domain.RegisterResponse{
-		ID:     user.ID,
-		Email:  user.Email,
-		Role:   user.Role,
-		Status: user.Status,
+	// 6. Generate Tokens
+	accessToken, err := u.generateToken(user, 15*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := u.generateRefreshToken(user)
+	if err != nil {
+		return nil, err
+	}
+
+	// 7. Create Session
+	session := &domain.Session{
+		ID:             uuid.New(),
+		UserID:         user.ID,
+		Token:          accessToken,
+		RefreshToken:   &refreshToken,
+		IPAddress:      &req.IPAddress,
+		UserAgent:      &req.UserAgent,
+		IsActive:       true,
+		ExpiresAt:      now.Add(15 * time.Minute),
+		LastActivityAt: now,
+		CreatedAt:      now,
+	}
+
+	if err := u.sessionRepo.Create(ctx, session); err != nil {
+		return nil, err
+	}
+
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
+	}
+	return &domain.LoginResponse{
+		User: &domain.UserResponse{
+			ID:        user.ID,
+			Name:      name,
+			Email:     user.Email,
+			Role:      user.Role,
+			Verified:  user.EmailVerified,
+			CreatedAt: user.CreatedAt,
+		},
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    900,
 	}, nil
 }
 
@@ -161,11 +219,18 @@ func (u *authUseCase) Login(ctx context.Context, req *domain.LoginRequest) (*dom
 		CreatedAt:     now,
 	})
 
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
+	}
 	return &domain.LoginResponse{
 		User: &domain.UserResponse{
-			ID:    user.ID,
-			Email: user.Email,
-			Role:  user.Role,
+			ID:        user.ID,
+			Name:      name,
+			Email:     user.Email,
+			Role:      user.Role,
+			Verified:  user.EmailVerified,
+			CreatedAt: user.CreatedAt,
 		},
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -246,11 +311,18 @@ func (u *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*d
 	// But we need to ensure the user has an active session
 	// Depending on implementation, we might want to check the session repository here.
 
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
+	}
 	return &domain.LoginResponse{
 		User: &domain.UserResponse{
-			ID:    user.ID,
-			Email: user.Email,
-			Role:  user.Role,
+			ID:        user.ID,
+			Name:      name,
+			Email:     user.Email,
+			Role:      user.Role,
+			Verified:  user.EmailVerified,
+			CreatedAt: user.CreatedAt,
 		},
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken, // Return same refresh token
@@ -267,17 +339,69 @@ func (u *authUseCase) GetMe(ctx context.Context, userID uuid.UUID) (*domain.User
 		return nil, errors.New("user not found")
 	}
 
+	name := ""
+	if user.Name != nil {
+		name = *user.Name
+	}
 	return &domain.UserResponse{
-		ID:    user.ID,
-		Email: user.Email,
-		Role:  user.Role,
+		ID:        user.ID,
+		Name:      name,
+		Email:     user.Email,
+		Role:      user.Role,
+		Verified:  user.EmailVerified,
+		CreatedAt: user.CreatedAt,
 	}, nil
 }
 
 func (u *authUseCase) VerifyEmail(ctx context.Context, token string) error {
-	// TODO: Implement actual token verification logic (check DB/Redis for verification token)
-	// For now, we mock success
-	return nil
+	vToken, err := u.tokenRepo.GetByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+	if vToken == nil || vToken.Used || vToken.ExpiresAt.Before(time.Now()) {
+		return errors.New("invalid or expired token")
+	}
+
+	user, err := u.userRepo.GetByID(ctx, vToken.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	user.EmailVerified = true
+	now := time.Now()
+	user.EmailVerifiedAt = &now
+	user.UpdatedAt = now
+
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	return u.tokenRepo.MarkAsUsed(ctx, vToken.ID)
+}
+
+func (u *authUseCase) ResendVerification(ctx context.Context, req *domain.ResendVerificationRequest) error {
+	user, err := u.userRepo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		return err
+	}
+	if user == nil || user.EmailVerified {
+		return nil // Don't reveal user existence/status
+	}
+
+	tokenStr := uuid.New().String()
+	vToken := &domain.VerificationToken{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		Token:     tokenStr,
+		TokenHash: tokenStr, // In real world hash this
+		Type:      "email_verification",
+		ExpiresAt: time.Now().Add(24 * time.Hour),
+		CreatedAt: time.Now(),
+	}
+	return u.tokenRepo.Create(ctx, vToken)
 }
 
 func (u *authUseCase) ForgotPassword(ctx context.Context, email string) error {
@@ -289,13 +413,53 @@ func (u *authUseCase) ForgotPassword(ctx context.Context, email string) error {
 		// Don't reveal user existence
 		return nil
 	}
-	// TODO: Generate reset token and send email
-	return nil
+
+	tokenStr := uuid.New().String()
+	vToken := &domain.VerificationToken{
+		ID:        uuid.New(),
+		UserID:    user.ID,
+		Token:     tokenStr,
+		TokenHash: tokenStr,
+		Type:      "password_reset",
+		ExpiresAt: time.Now().Add(1 * time.Hour),
+		CreatedAt: time.Now(),
+	}
+	return u.tokenRepo.Create(ctx, vToken)
 }
 
 func (u *authUseCase) ResetPassword(ctx context.Context, req *domain.ResetPasswordRequest) error {
-	// TODO: Verify token and update password
-	return nil
+	vToken, err := u.tokenRepo.GetByToken(ctx, req.Token)
+	if err != nil {
+		return err
+	}
+	if vToken == nil || vToken.Used || vToken.ExpiresAt.Before(time.Now()) || vToken.Type != "password_reset" {
+		return errors.New("invalid or expired token")
+	}
+
+	user, err := u.userRepo.GetByID(ctx, vToken.UserID)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	user.PasswordHash = string(hashedPassword)
+	user.UpdatedAt = time.Now()
+
+	if err := u.userRepo.Update(ctx, user); err != nil {
+		return err
+	}
+
+	// Revoke active sessions on password reset
+	_ = u.sessionRepo.DeleteByUserID(ctx, user.ID)
+
+	return u.tokenRepo.MarkAsUsed(ctx, vToken.ID)
 }
 
 func (u *authUseCase) ChangePassword(ctx context.Context, req *domain.ChangePasswordRequest) error {
