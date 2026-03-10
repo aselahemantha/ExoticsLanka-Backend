@@ -1,0 +1,30 @@
+### Environment Variables
+# @token = <insert_jwt_token_here>
+
+### Get Current User Profile
+GET http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}
+
+### Update User Profile
+PATCH http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Name",
+  "bio": "Updated bio here",
+  "phone": "+94 77 123 4567"
+}
+
+### Request Verification
+POST http://localhost:8091/api/users/me/verification
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "dealer"
+}
+
+### Delete Account
+DELETE http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}

@@ -1,0 +1,902 @@
+### Login Dealer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("dealer_token", response.body.access_token);
+client.global.set("dealer_id", response.body.user.id);
+%}
+
+### Login Regular User (Visitor)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Track View Event (Authenticated User)
+POST http://localhost:8089/api/analytics/track
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+  "listingId": "a1b2c3d4-e5f6-7890-1234-567890abcdef", 
+  "eventType": "view",
+  "sessionId": "session-123",
+  "referrer": "google.com"
+}
+# Note: listingId needs to be valid UUID, ideally existing one. 
+# Providing valid UUID format but might fail FK constraint if not in DB.
+# For isolation test, ensure DB has listing or loose constraint (DB constraints are strict)
+# We assume listing exists from previous tests or manual seed.
+# If FK fails, this test fails 500.
+
+### Track Contact Event (Anonymous)
+POST http://localhost:8089/api/analytics/track
+Content-Type: application/json
+
+{
+  "listingId": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+  "eventType": "contact_view",
+  "sessionId": "session-456"
+}
+
+### Trigger Aggregation (Admin/Dealer manual trigger)
+POST http://localhost:8089/api/analytics/jobs/aggregate
+Authorization: Bearer {{dealer_token}}
+
+### Get Dashboard Overview
+GET http://localhost:8089/api/analytics/overview?period=30d
+Authorization: Bearer {{dealer_token}}
+
+### Get Insights
+GET http://localhost:8089/api/analytics/insights
+Authorization: Bearer {{dealer_token}}
+
+### Get Inventory Performance
+GET http://localhost:8089/api/analytics/inventory
+Authorization: Bearer {{dealer_token}}
+### Register
+POST http://localhost:8081/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "role": "buyer"
+}
+
+### Login
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+client.global.set("refresh_token", response.body.refresh_token);
+%}
+
+### Get Me (Protected)
+GET http://localhost:8081/api/auth/me
+Authorization: Bearer {{auth_token}}
+
+### Refresh Token
+POST http://localhost:8081/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+### Change Password
+POST http://localhost:8081/api/auth/change-password
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+    "current_password": "Password123!",
+    "new_password": "NewPassword123!"
+}
+
+### Logout
+POST http://localhost:8081/api/auth/logout
+Authorization: Bearer {{auth_token}}
+
+### Forgot Password
+POST http://localhost:8081/api/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Reset Password
+POST http://localhost:8081/api/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "your-reset-token-here",
+  "new_password": "NewPassword123!"
+}
+
+### Verify Email
+POST http://localhost:8081/api/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "your-verification-token-here"
+}
+
+### Resend Verification
+POST http://localhost:8081/api/auth/resend-verification
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+### Login User
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Add to Comparison 1
+POST http://localhost:8090/api/comparison/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 2 (Use different ID - Mock if DB empty or use real IDs)
+POST http://localhost:8090/api/comparison/b2c3d4e5-f678-9012-3456-7890abcdef12
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 3
+POST http://localhost:8090/api/comparison/c3d4e5f6-7890-1234-5678-90abcdef1234
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 4
+POST http://localhost:8090/api/comparison/d4e5f678-9012-3456-7890-abcdef123456
+Authorization: Bearer {{user_token}}
+
+### Add to Comparison 5 (Should Fail)
+POST http://localhost:8090/api/comparison/e5f67890-1234-5678-90ab-cdef12345678
+Authorization: Bearer {{user_token}}
+
+### Get Comparison List
+GET http://localhost:8090/api/comparison
+Authorization: Bearer {{user_token}}
+
+### Check Status
+GET http://localhost:8090/api/comparison/check/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Compare View
+GET http://localhost:8090/api/comparison/compare
+Authorization: Bearer {{user_token}}
+
+### Remove Item
+DELETE http://localhost:8090/api/comparison/a1b2c3d4-e5f6-7890-1234-567890abcdef
+Authorization: Bearer {{user_token}}
+
+### Clear All
+DELETE http://localhost:8090/api/comparison
+Authorization: Bearer {{user_token}}
+### Login Admin
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("admin_token", response.body.access_token);
+%}
+
+### Login Regular User (Optional link)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("user_token", response.body.access_token);
+%}
+
+### Submit Inquiry (Anonymous)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{
+  "name": "Anonymous Visitor",
+  "email": "visitor@example.com",
+  "phone": "0771234567",
+  "subject": "general",
+  "message": "I have a question about fees."
+}
+
+> {%
+client.global.set("inquiry_id_1", response.body.data.id);
+%}
+
+### Submit Inquiry (Authenticated)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+  "name": "Registered User",
+  "email": "user@example.com",
+  "subject": "support",
+  "message": "I need help with my account."
+}
+
+> {%
+client.global.set("inquiry_id_2", response.body.data.id);
+%}
+
+### Submit Urgent Complaint (Priority Check)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{
+  "name": "Angry User",
+  "email": "angry@example.com",
+  "subject": "complaint",
+  "message": "This is unacceptable service!"
+}
+
+### Rate Limit Test (Submit 5 more times quickly)
+POST http://localhost:8088/api/contact
+Content-Type: application/json
+
+{ "name": "Spammer", "email": "spammer@example.com", "subject": "other", "message": "Spam 1" }
+
+### Get Inquiries (Admin)
+GET http://localhost:8088/api/contact?status=pending
+Authorization: Bearer {{admin_token}}
+
+### Get Inquiry Detail (Admin)
+GET http://localhost:8088/api/contact/{{inquiry_id_1}}
+Authorization: Bearer {{admin_token}}
+
+### Respond Inquiry (Admin)
+PUT http://localhost:8088/api/contact/{{inquiry_id_1}}
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "responded",
+  "adminResponse": "Hello, fees are 5%."
+}
+
+### Get Stats (Admin)
+GET http://localhost:8088/api/contact/stats
+Authorization: Bearer {{admin_token}}
+### Login (Auth Service)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Favorite Test Car",
+  "make": "TestMake",
+  "model": "TestModel",
+  "year": 2024,
+  "price": 50000000,
+  "mileage": 1000,
+  "condition": "Used",
+  "transmission": "Automatic",
+  "fuelType": "Petrol",
+  "bodyType": "Coupe",
+  "color": "Red",
+  "doors": 2,
+  "seats": 2,
+  "engineSize": "3.0L",
+  "drivetrain": "RWD",
+  "description": "For testing favorites",
+  "location": "Colombo",
+  "contactPhone": "123",
+  "contactEmail": "test@example.com",
+  "features": ["Test Feature"]
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Add to Favorites
+POST http://localhost:8083/api/favorites/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Check if Favorited
+GET http://localhost:8083/api/favorites/check/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Get Favorites
+GET http://localhost:8083/api/favorites
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Get Favorites Count
+GET http://localhost:8083/api/favorites/count
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Remove Favorite
+DELETE http://localhost:8083/api/favorites/{{listing_id}}
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+### Clear All Favorites
+DELETE http://localhost:8083/api/favorites
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+### Environment Variables
+# @token = <insert_jwt_token_here>
+
+### Create a Listing
+POST http://localhost:8083/api/listings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "2021 Porsche 911 Carrera",
+  "make": "Porsche",
+  "model": "911 Carrera",
+  "year": 2021,
+  "price": 42000000,
+  "mileage": 13500,
+  "condition": "used",
+  "bodyType": "Coupe",
+  "fuelType": "Petrol",
+  "transmission": "Automatic",
+  "color": "White",
+  "doors": 2,
+  "seats": 4,
+  "engineSize": "3.0L",
+  "drivetrain": "RWD",
+  "features": ["Leather Seats", "Navigation System", "Parking Sensors"],
+  "description": "Well-maintained 911 with full service history.",
+  "location": "Colombo",
+  "images": [
+    "https://example.com/listings/1/img1.jpg",
+    "https://example.com/listings/1/img2.jpg"
+  ]
+}
+
+### Get All Listings
+GET http://localhost:8083/api/listings?limit=10&page=1
+
+### Search Listings (Make + Model + Price Filter)
+GET http://localhost:8083/api/listings?make=Porsche&model=911%20Carrera&priceMax=50000000
+
+### Get Featured Listings
+GET http://localhost:8083/api/listings/featured
+
+### Get Trending Listings
+GET http://localhost:8083/api/listings/trending
+
+### Get Brands List
+GET http://localhost:8083/api/brands
+
+### Get Models for Brand
+GET http://localhost:8083/api/models?brand=Porsche
+
+### Get Single Listing By ID
+# @listing_id = <insert_id>
+GET http://localhost:8083/api/listings/{{listing_id}}
+
+### View Listing (Increments view counter)
+POST http://localhost:8083/api/listings/{{listing_id}}/view
+
+### Update a Listing
+PATCH http://localhost:8083/api/listings/{{listing_id}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "price": 41500000,
+  "mileage": 14000
+}
+
+### Delete a Listing
+DELETE http://localhost:8083/api/listings/{{listing_id}}
+Authorization: Bearer {{token}}
+
+### Get My Postings
+GET http://localhost:8083/api/users/me/listings
+Authorization: Bearer {{token}}
+
+### Note: The following act on a target listing (Favorites & Repoots)
+
+### Add Favorite
+POST http://localhost:8083/api/listings/{{listing_id}}/favorite
+Authorization: Bearer {{token}}
+
+### Remove Favorite
+DELETE http://localhost:8083/api/listings/{{listing_id}}/favorite
+Authorization: Bearer {{token}}
+
+### Get My Favorites
+GET http://localhost:8083/api/users/me/favorites
+Authorization: Bearer {{token}}
+
+### Report a Listing
+POST http://localhost:8083/api/listings/{{listing_id}}/reports
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "misleading",
+  "details": "Mileage seems incorrect based on interior photos."
+}
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+client.global.set("seller_id", response.body.user.id);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Chattable Car",
+  "make": "ChatMake",
+  "model": "ChatModel",
+  "year": 2024,
+  "price": 12000000,
+  "mileage": 100
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Create Conversation (Buyer -> Seller)
+POST http://localhost:8085/api/conversations
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "{{seller_id}}",
+  "initialMessage": "Is this car still available? I am interested."
+}
+
+> {%
+client.global.set("conversation_id", response.body.data.id);
+%}
+
+### Get Buyer Conversations
+GET http://localhost:8085/api/conversations
+Authorization: Bearer {{buyer_token}}
+
+### Get Seller Conversations (Should see unread)
+GET http://localhost:8085/api/conversations
+Authorization: Bearer {{seller_token}}
+
+### Get Unread Count (Seller)
+GET http://localhost:8085/api/messages/unread-count
+Authorization: Bearer {{seller_token}}
+
+### Reply (Seller -> Buyer)
+POST http://localhost:8085/api/conversations/{{conversation_id}}/messages
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "content": "Yes, it is availability. When would you like to see it?"
+}
+
+### Read Conversation (Buyer reads reply)
+PUT http://localhost:8085/api/conversations/{{conversation_id}}/read
+Authorization: Bearer {{buyer_token}}
+
+### Get Messages (Conversation Detail)
+GET http://localhost:8085/api/conversations/{{conversation_id}}
+Authorization: Bearer {{buyer_token}}
+### Login Reporter (Regular User)
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("reporter_token", response.body.access_token);
+client.global.set("reporter_id", response.body.user.id);
+%}
+
+### Login Admin
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("admin_token", response.body.access_token);
+client.global.set("admin_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "seller@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+%}
+
+### Create Listing (Target for Report)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "To Be Reported Car",
+  "make": "Toyota",
+  "model": "Vitz",
+  "year": 2018,
+  "price": 6500000,
+  "mileage": 45000,
+  "fuelType": "Petrol"
+}
+
+> {%
+client.global.set("listing_id_report", response.body.data.id);
+%}
+
+### Submit Report (User)
+POST http://localhost:8087/api/reports
+Content-Type: application/json
+Authorization: Bearer {{reporter_token}}
+
+{
+  "listingId": "{{listing_id_report}}",
+  "reason": "misleading",
+  "details": "The price is suspicious for this model."
+}
+
+> {%
+client.global.set("report_id", response.body.data.id);
+%}
+
+### Submit Duplicate Report (User) - Should Fail 409
+POST http://localhost:8087/api/reports
+Content-Type: application/json
+Authorization: Bearer {{reporter_token}}
+
+{
+  "listingId": "{{listing_id_report}}",
+  "reason": "spam",
+  "details": "Trying again..."
+}
+
+### Get Reports (Admin)
+GET http://localhost:8087/api/reports?status=pending
+Authorization: Bearer {{admin_token}}
+
+### Get Report Detail (Admin)
+GET http://localhost:8087/api/reports/{{report_id}}
+Authorization: Bearer {{admin_token}}
+
+### Get Stats (Admin)
+GET http://localhost:8087/api/reports/stats
+Authorization: Bearer {{admin_token}}
+
+### Resolve Report (Admin) - Remove Listing
+PUT http://localhost:8087/api/reports/{{report_id}}
+Content-Type: application/json
+Authorization: Bearer {{admin_token}}
+
+{
+  "status": "resolved",
+  "adminNotes": "Confirmed misleading price. Removing listing.",
+  "actionTaken": "listing_removed"
+}
+
+### Verify Listing Status (Should be 'rejected' or similar)
+# We can check this by trying to view it or checking report detail again where we embedded listing info (though status on embedded might be old if not refreshed).
+# Better to check listings service directly if possible, or trust the report service executed the DB update.
+GET http://localhost:8082/api/listings/{{listing_id_report}}
+Authorization: Bearer {{reporter_token}}
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+client.global.set("seller_id", response.body.user.id);
+%}
+
+### Create Listing (Listings Service)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Reviewable Car",
+  "make": "ReviewMake",
+  "model": "ReviewModel",
+  "year": 2024,
+  "price": 10000000,
+  "mileage": 500
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Create Review
+POST http://localhost:8084/api/reviews
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "{{seller_id}}",
+  "rating": 5,
+  "title": "Great Seller!",
+  "comment": "Had a wonderful experience buying this car.",
+  "photos": ["http://example.com/photo1.jpg"]
+}
+
+> {%
+client.global.set("review_id", response.body.data.id);
+%}
+
+### Get Seller Reviews
+GET http://localhost:8084/api/reviews/seller/{{seller_id}}
+Authorization: Bearer {{buyer_token}}
+
+### Get Seller Stats
+GET http://localhost:8084/api/reviews/seller/{{seller_id}}/stats
+
+### Toggle Helpful (Self vote allowed in implementation, strictly)
+POST http://localhost:8084/api/reviews/{{review_id}}/helpful
+Authorization: Bearer {{buyer_token}}
+
+### Note: Seller Response requires Seller Token
+POST http://localhost:8084/api/reviews/{{review_id}}/response
+Authorization: Bearer {{seller_token}}
+
+{
+  "comment": "Thanks for the feedback!"
+}
+
+### Add Photo
+POST http://localhost:8084/api/reviews/{{review_id}}/photos
+Authorization: Bearer {{buyer_token}}
+
+{
+  "url": "http://example.com/photo2.jpg"
+}
+
+### Delete Review
+DELETE http://localhost:8084/api/reviews/{{review_id}}
+Authorization: Bearer {{buyer_token}}
+### Login Buyer
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("buyer_token", response.body.access_token);
+client.global.set("buyer_id", response.body.user.id);
+%}
+
+### Login Seller
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("seller_token", response.body.access_token);
+%}
+
+### Create Matchable Listing (Seller)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "Alert Car BMW",
+  "make": "BMW",
+  "model": "X5",
+  "year": 2023,
+  "price": 35000000,
+  "mileage": 5000,
+  "fuelType": "Petrol"
+}
+
+> {%
+client.global.set("listing_id_1", response.body.data.id);
+%}
+
+### Create Saved Search (Buyer - Should match above)
+POST http://localhost:8086/api/searches
+Content-Type: application/json
+Authorization: Bearer {{buyer_token}}
+
+{
+  "name": "My BMW Search",
+  "filters": {
+    "searchQuery": "",
+    "brands": ["BMW"],
+    "priceRange": [0, 50000000],
+    "yearRange": [2020, 2024],
+    "mileageRange": [0, 100000],
+    "fuelTypes": [],
+    "transmissions": [],
+    "bodyTypes": [],
+    "locations": [],
+    "condition": []
+  },
+  "alertEnabled": true,
+  "alertFrequency": "daily"
+}
+
+> {%
+client.global.set("search_id", response.body.data.id);
+%}
+
+### Get Saved Searches (Verify Count)
+GET http://localhost:8086/api/searches
+Authorization: Bearer {{buyer_token}}
+
+### Run Search (Directly see results)
+POST http://localhost:8086/api/searches/{{search_id}}/run
+Authorization: Bearer {{buyer_token}}
+
+### Create New Matching Listing (Seller)
+POST http://localhost:8082/api/listings
+Content-Type: application/json
+Authorization: Bearer {{seller_token}}
+
+{
+  "title": "New Alert Car BMW",
+  "make": "BMW",
+  "model": "X7",
+  "year": 2024,
+  "price": 45000000,
+  "mileage": 1000,
+  "fuelType": "Diesel"
+}
+
+### Check For New Matches (Buyer)
+POST http://localhost:8086/api/searches/{{search_id}}/check
+Authorization: Bearer {{buyer_token}}
+
+### Get New Matches Overview
+GET http://localhost:8086/api/searches/new-matches
+Authorization: Bearer {{buyer_token}}
+### Environment Variables
+# @token = <insert_jwt_token_here>
+
+### Get Current User Profile
+GET http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}
+
+### Update User Profile
+PATCH http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "New Name",
+  "bio": "Updated bio here",
+  "phone": "+94 77 123 4567"
+}
+
+### Request Verification
+POST http://localhost:8091/api/users/me/verification
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "type": "dealer"
+}
+
+### Delete Account
+DELETE http://localhost:8091/api/users/me
+Authorization: Bearer {{token}}

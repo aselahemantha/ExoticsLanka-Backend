@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aselahemantha/exoticsLanka/services/listings-service/internal/config"
-	delivery "github.com/aselahemantha/exoticsLanka/services/listings-service/internal/delivery/http"
-	"github.com/aselahemantha/exoticsLanka/services/listings-service/internal/repository"
-	"github.com/aselahemantha/exoticsLanka/services/listings-service/internal/usecase"
+	"github.com/aselahemantha/exoticsLanka/services/user-service/internal/config"
+	delivery "github.com/aselahemantha/exoticsLanka/services/user-service/internal/delivery/http"
+	"github.com/aselahemantha/exoticsLanka/services/user-service/internal/repository"
+	"github.com/aselahemantha/exoticsLanka/services/user-service/internal/usecase"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -33,10 +33,15 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
+	// Note: You would theoretically run migrations here exactly like auth-service
+	// repository.RunMigrations(context.Background(), dbPool, "sql/migrations")
+
 	// 3. Initialize Layers
-	repo := repository.NewPostgresListingRepository(dbPool)
-	uc := usecase.NewListingUseCase(repo)
-	handler := delivery.NewListingHandler(uc)
+	userRepo := repository.NewPostgresUserRepository(dbPool)
+	verificationRepo := repository.NewPostgresVerificationRepository(dbPool)
+
+	profileUC := usecase.NewProfileUseCase(userRepo, verificationRepo)
+	profileHandler := delivery.NewProfileHandler(profileUC)
 	authMiddleware := delivery.NewAuthMiddleware(cfg.JWTSecret)
 
 	// 4. Setup Router
@@ -45,7 +50,7 @@ func main() {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	handler.RegisterRoutes(router, authMiddleware)
+	profileHandler.RegisterRoutes(router, authMiddleware)
 
 	// 5. Start Server
 	srv := &http.Server{
@@ -54,7 +59,7 @@ func main() {
 	}
 
 	go func() {
-		log.Printf("Starting Listings Service on port %s", cfg.Port)
+		log.Printf("Starting User Service on port %s", cfg.Port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to start server: %v", err)
 		}

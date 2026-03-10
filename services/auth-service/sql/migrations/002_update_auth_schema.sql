@@ -1,8 +1,5 @@
 -- 002_update_auth_schema.sql
 
--- Add name column to users table
-ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(255);
-
 -- Create verification_tokens table
 CREATE TABLE IF NOT EXISTS verification_tokens (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),

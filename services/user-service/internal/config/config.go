@@ -19,7 +19,7 @@ func LoadConfig() *Config {
 	}
 
 	return &Config{
-		Port:        getEnv("PORT", "8083"),
+		Port:        getEnv("PORT", "8091"),
 		DatabaseURL: getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/exotics_db?sslmode=disable"),
 		JWTSecret:   getEnv("JWT_SECRET", "super-secret-key"),
 	}

@@ -59,7 +59,6 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 	user := &domain.User{
 		ID:           userID,
 		Email:        req.Email,
-		Name:         &req.Name,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
 		Status:       "pending",
@@ -129,14 +128,9 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 		return nil, err
 	}
 
-	name := ""
-	if user.Name != nil {
-		name = *user.Name
-	}
 	return &domain.LoginResponse{
 		User: &domain.UserResponse{
 			ID:        user.ID,
-			Name:      name,
 			Email:     user.Email,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
@@ -219,14 +213,9 @@ func (u *authUseCase) Login(ctx context.Context, req *domain.LoginRequest) (*dom
 		CreatedAt:     now,
 	})
 
-	name := ""
-	if user.Name != nil {
-		name = *user.Name
-	}
 	return &domain.LoginResponse{
 		User: &domain.UserResponse{
 			ID:        user.ID,
-			Name:      name,
 			Email:     user.Email,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
@@ -311,14 +300,9 @@ func (u *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*d
 	// But we need to ensure the user has an active session
 	// Depending on implementation, we might want to check the session repository here.
 
-	name := ""
-	if user.Name != nil {
-		name = *user.Name
-	}
 	return &domain.LoginResponse{
 		User: &domain.UserResponse{
 			ID:        user.ID,
-			Name:      name,
 			Email:     user.Email,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
@@ -339,13 +323,8 @@ func (u *authUseCase) GetMe(ctx context.Context, userID uuid.UUID) (*domain.User
 		return nil, errors.New("user not found")
 	}
 
-	name := ""
-	if user.Name != nil {
-		name = *user.Name
-	}
 	return &domain.UserResponse{
 		ID:        user.ID,
-		Name:      name,
 		Email:     user.Email,
 		Role:      user.Role,
 		Verified:  user.EmailVerified,

@@ -13,28 +13,35 @@ Port: `8081`
 - `POST /api/auth/logout` - Logout user
 - `POST /api/auth/forgot-password` - Request password reset
 
-## 2. Listings Service
+## 2. User/Profile Service
 Port: `8082`
+
+- `GET /api/users/me` - Get current user profile
+- `PATCH /api/users/me` - Update user profile
+- `POST /api/users/me/verification` - Request seller/dealer verification
+- `DELETE /api/users/me` - Delete user account
+
+## 3. Listings Service
+Port: `8083`
 
 - `POST /api/listings` - Create a new listing
 - `GET /api/listings` - Get all listings (supports search & filter via query params)
 - `GET /api/listings/{id}` - Get listing by ID
+- `PATCH /api/listings/{id}` - Update listing
+- `DELETE /api/listings/{id}` - Delete listing
 - `GET /api/listings/featured` - Get featured listings
 - `GET /api/listings/trending` - Get trending listings
 - `GET /api/brands` - Get available car brands
-
-## 3. Favorites Service
-Port: `8083`
-
-- `POST /api/favorites/{listing_id}` - Add a listing to favorites
-- `GET /api/favorites/check/{listing_id}` - Check if a listing is favorited
-- `GET /api/favorites` - Get all user's favorite listings
-- `GET /api/favorites/count` - Get count of user's favorites
-- `DELETE /api/favorites/{listing_id}` - Remove a listing from favorites
-- `DELETE /api/favorites` - Clear all favorites
+- `GET /api/models?brand={brand}` - Get models for a given brand
+- `POST /api/listings/{id}/view` - Increment listing view counter
+- `GET /api/users/me/listings` - Get the user's created listings
+- `POST /api/listings/{id}/favorite` - Add a listing to favorites
+- `DELETE /api/listings/{id}/favorite` - Remove a listing from favorites
+- `GET /api/users/me/favorites` - Get all of the user's favorited listings
+- `POST /api/listings/{id}/reports` - Submit a report for moderation
 
 ## 4. Reviews Service
-Port: `8084`
+Port: `8085`
 
 - `POST /api/reviews` - Create a new review
 - `GET /api/reviews/seller/{seller_id}` - Get reviews for a seller
@@ -45,7 +52,7 @@ Port: `8084`
 - `DELETE /api/reviews/{review_id}` - Delete a review
 
 ## 5. Messaging Service
-Port: `8085`
+Port: `8086`
 
 - `POST /api/conversations` - Create a new conversation
 - `GET /api/conversations` - Get all user conversations
@@ -55,7 +62,7 @@ Port: `8085`
 - `GET /api/conversations/{conversation_id}` - Get conversation details and messages
 
 ## 6. Saved Searches Service
-Port: `8086`
+Port: `8087`
 
 - `POST /api/searches` - Create a saved search
 - `GET /api/searches` - Get all saved searches
@@ -63,17 +70,8 @@ Port: `8086`
 - `POST /api/searches/{search_id}/check` - Check for new matches for a search
 - `GET /api/searches/new-matches` - Get overview of all new matches
 
-## 7. Reports Service
-Port: `8087`
-
-- `POST /api/reports` - Submit a report against a listing
-- `GET /api/reports` - Get all reports (Admin)
-- `GET /api/reports/{report_id}` - Get report detail (Admin)
-- `GET /api/reports/stats` - Get reporting statistics (Admin)
-- `PUT /api/reports/{report_id}` - Resolve a report (Admin)
-
-## 8. Contact Service
-Port: `8088`
+## 7. Contact Service
+Port: `8089`
 
 - `POST /api/contact` - Submit a contact inquiry
 - `GET /api/contact` - Get all inquiries (Admin)
@@ -81,8 +79,8 @@ Port: `8088`
 - `PUT /api/contact/{inquiry_id}` - Respond to an inquiry (Admin)
 - `GET /api/contact/stats` - Get inquiry stats (Admin)
 
-## 9. Analytics Service
-Port: `8089`
+## 8. Analytics Service
+Port: `8090`
 
 - `POST /api/analytics/track` - Track an event (view, contact_view, etc.)
 - `POST /api/analytics/jobs/aggregate` - Trigger analytics aggregation (Admin/Dealer)
@@ -90,8 +88,8 @@ Port: `8089`
 - `GET /api/analytics/insights` - Get analytics insights
 - `GET /api/analytics/inventory` - Get inventory performance metrics
 
-## 10. Comparison Service
-Port: `8090`
+## 9. Comparison Service
+Port: `8091`
 
 - `POST /api/comparison/{listing_id}` - Add a listing to comparison
 - `GET /api/comparison` - Get the current comparison list
@@ -100,14 +98,14 @@ Port: `8090`
 - `DELETE /api/comparison/{listing_id}` - Remove a listing from comparison
 - `DELETE /api/comparison` - Clear comparison list
 
-## 11. Image Service
+## 10. Image Service
 Handles image uploads and management.
 - `POST /images/upload` *(Route format varies)* - Upload a listing image
 - `PUT /images/reorder` *(Route format varies)* - Reorder listing images
 - `DELETE /images/{imageId}` *(Route format varies)* - Delete a listing image
 - `POST /images/avatar` *(Route format varies)* - Upload user avatar profile picture
 
-## 12. Notification Service
+## 11. Notification Service
 Handles user notification preferences and delivery.
 - `GET /notifications/preferences` *(Route format varies)* - Get notification preferences
 - `PUT /notifications/preferences` *(Route format varies)* - Update notification preferences

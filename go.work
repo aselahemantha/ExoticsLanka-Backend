@@ -13,4 +13,5 @@ use (
 	./services/reports-service
 	./services/reviews-service
 	./services/saved-searches-service
+	./services/user-service
 )

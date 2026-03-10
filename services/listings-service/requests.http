@@ -1,78 +1,99 @@
-### Login (Auth Service)
-POST http://localhost:8081/api/auth/login
+### Environment Variables
+# @token = <insert_jwt_token_here>
+
+### Create a Listing
+POST http://localhost:8083/api/listings
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "Password123!"
-}
-
-> {%
-client.global.set("auth_token", response.body.access_token);
-%}
-
-### Create Listing (Protected)
-POST http://localhost:8082/api/listings
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
-
-{
-  "title": "Mercedes-Benz S-Class S500",
-  "make": "Mercedes-Benz",
-  "model": "S-Class S500",
-  "year": 2023,
-  "price": 85000000,
-  "mileage": 12000,
-  "condition": "Used - Like New",
-  "transmission": "Automatic",
+  "title": "2021 Porsche 911 Carrera",
+  "make": "Porsche",
+  "model": "911 Carrera",
+  "year": 2021,
+  "price": 42000000,
+  "mileage": 13500,
+  "condition": "used",
+  "bodyType": "Coupe",
   "fuelType": "Petrol",
-  "bodyType": "Sedan",
-  "color": "Midnight Black",
-  "doors": 4,
-  "seats": 5,
-  "engineSize": "4.0L",
+  "transmission": "Automatic",
+  "color": "White",
+  "doors": 2,
+  "seats": 4,
+  "engineSize": "3.0L",
   "drivetrain": "RWD",
-  "description": "This exceptional Mercedes-Benz S-Class represents...",
-  "location": "Colombo 07",
-  "contactPhone": "+94771234567",
-  "contactEmail": "dealer@example.com",
-  "features": [
-    "Leather Seats",
-    "Sunroof",
-    "Navigation System"
+  "features": ["Leather Seats", "Navigation System", "Parking Sensors"],
+  "description": "Well-maintained 911 with full service history.",
+  "location": "Colombo",
+  "images": [
+    "https://example.com/listings/1/img1.jpg",
+    "https://example.com/listings/1/img2.jpg"
   ]
 }
 
-> {%
-client.global.set("listing_id", response.body.data.id);
-%}
-
 ### Get All Listings
-GET http://localhost:8082/api/listings
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+GET http://localhost:8083/api/listings?limit=10&page=1
 
-### Get All Listings (Search & Filter)
-GET http://localhost:8082/api/listings?search=Mercedes&minPrice=10000000
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
-
-### Get Listing By ID
-GET http://localhost:8082/api/listings/{{listing_id}}
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+### Search Listings (Make + Model + Price Filter)
+GET http://localhost:8083/api/listings?make=Porsche&model=911%20Carrera&priceMax=50000000
 
 ### Get Featured Listings
-GET http://localhost:8082/api/listings/featured
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+GET http://localhost:8083/api/listings/featured
 
 ### Get Trending Listings
-GET http://localhost:8082/api/listings/trending
-Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+GET http://localhost:8083/api/listings/trending
 
-### Get Brands
-GET http://localhost:8082/api/brands
+### Get Brands List
+GET http://localhost:8083/api/brands
+
+### Get Models for Brand
+GET http://localhost:8083/api/models?brand=Porsche
+
+### Get Single Listing By ID
+# @listing_id = <insert_id>
+GET http://localhost:8083/api/listings/{{listing_id}}
+
+### View Listing (Increments view counter)
+POST http://localhost:8083/api/listings/{{listing_id}}/view
+
+### Update a Listing
+PATCH http://localhost:8083/api/listings/{{listing_id}}
+Authorization: Bearer {{token}}
 Content-Type: application/json
-Authorization: Bearer {{auth_token}}
+
+{
+  "price": 41500000,
+  "mileage": 14000
+}
+
+### Delete a Listing
+DELETE http://localhost:8083/api/listings/{{listing_id}}
+Authorization: Bearer {{token}}
+
+### Get My Postings
+GET http://localhost:8083/api/users/me/listings
+Authorization: Bearer {{token}}
+
+### Note: The following act on a target listing (Favorites & Repoots)
+
+### Add Favorite
+POST http://localhost:8083/api/listings/{{listing_id}}/favorite
+Authorization: Bearer {{token}}
+
+### Remove Favorite
+DELETE http://localhost:8083/api/listings/{{listing_id}}/favorite
+Authorization: Bearer {{token}}
+
+### Get My Favorites
+GET http://localhost:8083/api/users/me/favorites
+Authorization: Bearer {{token}}
+
+### Report a Listing
+POST http://localhost:8083/api/listings/{{listing_id}}/reports
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "reason": "misleading",
+  "details": "Mileage seems incorrect based on interior photos."
+}

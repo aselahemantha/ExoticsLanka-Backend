@@ -22,15 +22,15 @@ func NewPostgresUserRepository(db *pgxpool.Pool) domain.UserRepository {
 func (r *postgresUserRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
 		INSERT INTO users (
-			id, email, name, password_hash, status, role, 
+			id, email, password_hash, status, role, 
 			email_verified, created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, 
-			$7, $8, $9
+			$1, $2, $3, $4, $5, 
+			$6, $7, $8
 		)
 	`
 	_, err := r.db.Exec(ctx, query,
-		user.ID, user.Email, user.Name, user.PasswordHash, user.Status, user.Role,
+		user.ID, user.Email, user.PasswordHash, user.Status, user.Role,
 		user.EmailVerified, user.CreatedAt, user.UpdatedAt,
 	)
 	return err
@@ -38,12 +38,12 @@ func (r *postgresUserRepository) Create(ctx context.Context, user *domain.User) 
 
 func (r *postgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, status, role, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, status, role, email_verified, created_at, updated_at
 		FROM users WHERE id = $1
 	`
 	var user domain.User
 	err := r.db.QueryRow(ctx, query, id).Scan(
-		&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.Status, &user.Role,
+		&user.ID, &user.Email, &user.PasswordHash, &user.Status, &user.Role,
 		&user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -57,12 +57,12 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*do
 
 func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, email, name, password_hash, status, role, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, status, role, email_verified, created_at, updated_at
 		FROM users WHERE email = $1
 	`
 	var user domain.User
 	err := r.db.QueryRow(ctx, query, email).Scan(
-		&user.ID, &user.Email, &user.Name, &user.PasswordHash, &user.Status, &user.Role,
+		&user.ID, &user.Email, &user.PasswordHash, &user.Status, &user.Role,
 		&user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
@@ -79,13 +79,13 @@ func (r *postgresUserRepository) Update(ctx context.Context, user *domain.User) 
 		UPDATE users SET 
 			status = $1, role = $2, email_verified = $3, 
 			updated_at = $4, last_login_at = $5, failed_login_attempts = $6,
-			locked_until = $7, name = $8
-		WHERE id = $9
+			locked_until = $7
+		WHERE id = $8
 	`
 	_, err := r.db.Exec(ctx, query,
 		user.Status, user.Role, user.EmailVerified,
 		user.UpdatedAt, user.LastLoginAt, user.FailedLoginAttempts,
-		user.LockedUntil, user.Name, user.ID,
+		user.LockedUntil, user.ID,
 	)
 	return err
 }

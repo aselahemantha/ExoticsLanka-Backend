@@ -11,7 +11,6 @@ import (
 type User struct {
 	ID                  uuid.UUID  `json:"id" db:"id"`
 	Email               string     `json:"email" db:"email"`
-	Name                *string    `json:"name" db:"name"`
 	PasswordHash        string     `json:"-" db:"password_hash"`
 	Status              string     `json:"status" db:"status"` // pending, active, suspended, deleted
 	EmailVerified       bool       `json:"email_verified" db:"email_verified"`
@@ -119,7 +118,6 @@ type AuthUseCase interface {
 
 // DTOs for UseCases
 type RegisterRequest struct {
-	Name      string `json:"name" binding:"required"`
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
 	Role      string `json:"role"`
@@ -143,7 +141,6 @@ type LoginResponse struct {
 
 type UserResponse struct {
 	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Role      string    `json:"role"`
 	Verified  bool      `json:"verified"`
