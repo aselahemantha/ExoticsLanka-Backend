@@ -127,6 +127,9 @@ func (s *Service) UploadUserAvatar(ctx context.Context, userID string, file mult
 		return "", err
 	}
 
+	// Get old avatar to delete from Cloudinary
+	oldPublicID, _ := s.repo.GetUserAvatarPublicID(ctx, userID)
+
 	folder := fmt.Sprintf("avatars/%s", userID)
 	url, publicID, err := s.storage.UploadFile(ctx, buf, folder)
 	if err != nil {
@@ -136,6 +139,10 @@ func (s *Service) UploadUserAvatar(ctx context.Context, userID string, file mult
 	err = s.repo.UpdateUserAvatar(ctx, userID, url, publicID)
 	if err != nil {
 		return "", err
+	}
+
+	if oldPublicID != "" {
+		_ = s.storage.DeleteFile(ctx, oldPublicID)
 	}
 
 	return url, nil

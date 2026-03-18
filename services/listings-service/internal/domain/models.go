@@ -80,6 +80,7 @@ type ListingImage struct {
 	ID        uuid.UUID `json:"id" db:"id"`
 	ListingID uuid.UUID `json:"listingId" db:"listing_id"`
 	URL       string    `json:"url" db:"url"`
+	PublicID  string    `json:"publicId" db:"public_id"`
 	IsPrimary bool      `json:"isPrimary" db:"is_primary"`
 	Position  int       `json:"position" db:"position"`
 	CreatedAt time.Time `json:"createdAt" db:"created_at"`

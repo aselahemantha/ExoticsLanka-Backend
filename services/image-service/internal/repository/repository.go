@@ -108,6 +108,19 @@ func (r *Repository) GetListingOwner(ctx context.Context, listingID string) (str
 	return userID, nil
 }
 
+func (r *Repository) GetUserAvatarPublicID(ctx context.Context, userID string) (string, error) {
+	var publicID *string
+	query := `SELECT avatar_public_id FROM users WHERE id = $1`
+	err := r.db.QueryRow(ctx, query, userID).Scan(&publicID)
+	if err != nil {
+		return "", err
+	}
+	if publicID == nil {
+		return "", nil
+	}
+	return *publicID, nil
+}
+
 func (r *Repository) UpdateUserAvatar(ctx context.Context, userID string, url string, publicID string) error {
 	query := `UPDATE users SET avatar_url = $1, avatar_public_id = $2 WHERE id = $3`
 	_, err := r.db.Exec(ctx, query, url, publicID, userID)

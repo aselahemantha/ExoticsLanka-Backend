@@ -56,9 +56,9 @@ func (r *postgresListingRepository) Create(ctx context.Context, l *domain.CarLis
 	// Insert associated initial images
 	for i, url := range images {
 		imgID := uuid.New()
-		imgQuery := `INSERT INTO listing_images (id, listing_id, url, is_primary, position) VALUES ($1, $2, $3, $4, $5)`
+		imgQuery := `INSERT INTO listing_images (id, listing_id, url, public_id, is_primary, position) VALUES ($1, $2, $3, $4, $5, $6)`
 		isPrimary := i == 0
-		_, err = tx.Exec(ctx, imgQuery, imgID, l.ID, url, isPrimary, i)
+		_, err = tx.Exec(ctx, imgQuery, imgID, l.ID, url, "", isPrimary, i) // PublicID empty for initial image URLs
 		if err != nil {
 			return err
 		}
@@ -436,7 +436,7 @@ func (r *postgresListingRepository) CreateReport(ctx context.Context, report *do
 // ----------------------------------------------------
 
 func (r *postgresListingRepository) getImagesForListing(ctx context.Context, listingID uuid.UUID) ([]domain.ListingImage, error) {
-	query := `SELECT id, listing_id, url, is_primary, position, created_at FROM listing_images WHERE listing_id = $1 ORDER BY position ASC`
+	query := `SELECT id, listing_id, url, public_id, is_primary, position, created_at FROM listing_images WHERE listing_id = $1 ORDER BY position ASC`
 	rows, err := r.db.Query(ctx, query, listingID)
 	if err != nil {
 		return nil, err
@@ -446,7 +446,7 @@ func (r *postgresListingRepository) getImagesForListing(ctx context.Context, lis
 	var images []domain.ListingImage
 	for rows.Next() {
 		var img domain.ListingImage
-		if err := rows.Scan(&img.ID, &img.ListingID, &img.URL, &img.IsPrimary, &img.Position, &img.CreatedAt); err != nil {
+		if err := rows.Scan(&img.ID, &img.ListingID, &img.URL, &img.PublicID, &img.IsPrimary, &img.Position, &img.CreatedAt); err != nil {
 			return nil, err
 		}
 		images = append(images, img)

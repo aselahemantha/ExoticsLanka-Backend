@@ -3,9 +3,9 @@ package domain
 type ImageUploadResponse struct {
 	ID        string `json:"id"`
 	URL       string `json:"url"`
-	IsPrimary bool   `json:"is_primary"`
+	IsPrimary bool   `json:"isPrimary"`
 }
 
 type ReorderRequest struct {
-	ImageIDs []string `json:"image_ids"`
+	ImageIDs []string `json:"imageIds"`
 }
