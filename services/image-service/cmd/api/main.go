@@ -28,15 +28,15 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	// S3 Client
-	s3Client, err := storage.NewS3Client(cfg.AWSRegion, cfg.S3Bucket, cfg.S3Endpoint)
+	// Cloudinary Client
+	cloudinaryClient, err := storage.NewCloudinaryClient(cfg.CloudinaryURL)
 	if err != nil {
-		log.Fatalf("Unable to initialize S3 client: %v\n", err)
+		log.Fatalf("Unable to initialize Cloudinary client: %v\n", err)
 	}
 
 	// Dependencies
 	repo := repository.NewRepository(dbPool)
-	svc := service.NewService(repo, s3Client)
+	svc := service.NewService(repo, cloudinaryClient)
 	h := handler.NewHandler(svc, cfg.JWTSecret)
 	auth := handler.NewAuthMiddleware(cfg.JWTSecret)
 

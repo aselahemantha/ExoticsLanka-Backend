@@ -1,0 +1,79 @@
+### Login User
+POST http://localhost:8081/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("auth_token", response.body.access_token);
+%}
+
+### Create Matchable Listing (Seller)
+POST http://localhost:8083/api/listings
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Image Test Car",
+  "make": "ImageMake",
+  "model": "ImageModel",
+  "year": 2024,
+  "price": 50000000,
+  "mileage": 1000,
+  "condition": "Used",
+  "transmission": "Automatic",
+  "fuelType": "Petrol",
+  "bodyType": "Coupe",
+  "color": "Red"
+}
+
+> {%
+client.global.set("image_listing_id", response.body.data.id);
+%}
+
+### Image Service: Upload Listing Image
+# Note: You have to attach a binary file in the real world
+POST http://localhost:8091/api/listings/{{image_listing_id}}/images
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="car_image.jpg"
+Content-Type: image/jpeg
+
+< ./test_image.jpg
+--WebAppBoundary--
+
+> {%
+client.global.set("uploaded_image_id", response.body.data.id);
+%}
+
+### Image Service: Reorder Images
+PUT http://localhost:8091/api/listings/{{image_listing_id}}/images/reorder
+Authorization: Bearer {{auth_token}}
+Content-Type: application/json
+
+{
+  "imageIds": [
+    "{{uploaded_image_id}}"
+  ]
+}
+
+### Image Service: Delete Image
+DELETE http://localhost:8091/api/listings/{{image_listing_id}}/images/{{uploaded_image_id}}
+Authorization: Bearer {{auth_token}}
+
+### Image Service: Upload Avatar
+PUT http://localhost:8091/api/users/me/avatar
+Authorization: Bearer {{auth_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./test_avatar.jpg
+--WebAppBoundary--
