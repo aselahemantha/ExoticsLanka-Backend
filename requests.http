@@ -375,7 +375,7 @@ Authorization: Bearer {{auth_token}}
 # @token = <insert_jwt_token_here>
 
 ### Create a Listing
-POST http://localhost:8083/api/listings
+POST http://localhost:8082/api/listings
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -405,32 +405,32 @@ Content-Type: application/json
 }
 
 ### Get All Listings
-GET http://localhost:8083/api/listings?limit=10&page=1
+GET http://localhost:8082/api/listings?limit=10&page=1
 
 ### Search Listings (Make + Model + Price Filter)
-GET http://localhost:8083/api/listings?make=Porsche&model=911%20Carrera&priceMax=50000000
+GET http://localhost:8082/api/listings?make=Porsche&model=911%20Carrera&priceMax=50000000
 
 ### Get Featured Listings
-GET http://localhost:8083/api/listings/featured
+GET http://localhost:8082/api/listings/featured
 
 ### Get Trending Listings
-GET http://localhost:8083/api/listings/trending
+GET http://localhost:8082/api/listings/trending
 
 ### Get Brands List
-GET http://localhost:8083/api/brands
+GET http://localhost:8082/api/brands
 
 ### Get Models for Brand
-GET http://localhost:8083/api/models?brand=Porsche
+GET http://localhost:8082/api/models?brand=Porsche
 
 ### Get Single Listing By ID
 # @listing_id = <insert_id>
-GET http://localhost:8083/api/listings/{{listing_id}}
+GET http://localhost:8082/api/listings/{{listing_id}}
 
 ### View Listing (Increments view counter)
-POST http://localhost:8083/api/listings/{{listing_id}}/view
+POST http://localhost:8082/api/listings/{{listing_id}}/view
 
 ### Update a Listing
-PATCH http://localhost:8083/api/listings/{{listing_id}}
+PATCH http://localhost:8082/api/listings/{{listing_id}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -440,7 +440,7 @@ Content-Type: application/json
 }
 
 ### Delete a Listing
-DELETE http://localhost:8083/api/listings/{{listing_id}}
+DELETE http://localhost:8082/api/listings/{{listing_id}}
 Authorization: Bearer {{token}}
 
 ### Get My Postings
@@ -450,11 +450,11 @@ Authorization: Bearer {{token}}
 ### Note: The following act on a target listing (Favorites & Repoots)
 
 ### Add Favorite
-POST http://localhost:8083/api/listings/{{listing_id}}/favorite
+POST http://localhost:8082/api/listings/{{listing_id}}/favorite
 Authorization: Bearer {{token}}
 
 ### Remove Favorite
-DELETE http://localhost:8083/api/listings/{{listing_id}}/favorite
+DELETE http://localhost:8082/api/listings/{{listing_id}}/favorite
 Authorization: Bearer {{token}}
 
 ### Get My Favorites
@@ -462,7 +462,7 @@ GET http://localhost:8083/api/users/me/favorites
 Authorization: Bearer {{token}}
 
 ### Report a Listing
-POST http://localhost:8083/api/listings/{{listing_id}}/reports
+POST http://localhost:8082/api/listings/{{listing_id}}/reports
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -874,11 +874,11 @@ Authorization: Bearer {{buyer_token}}
 # @token = <insert_jwt_token_here>
 
 ### Get Current User Profile
-GET http://localhost:8091/api/users/me
+GET http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}
 
 ### Update User Profile
-PATCH http://localhost:8091/api/users/me
+PATCH http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -889,7 +889,7 @@ Content-Type: application/json
 }
 
 ### Request Verification
-POST http://localhost:8091/api/users/me/verification
+POST http://localhost:8093/api/users/me/verification
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -898,7 +898,7 @@ Content-Type: application/json
 }
 
 ### Delete Account
-DELETE http://localhost:8091/api/users/me
+DELETE http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}
 ### Login User
 POST http://localhost:8081/api/auth/login
@@ -914,7 +914,7 @@ client.global.set("auth_token", response.body.access_token);
 %}
 
 ### Create Matchable Listing (Seller)
-POST http://localhost:8083/api/listings
+POST http://localhost:8082/api/listings
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 

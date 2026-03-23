@@ -12,7 +12,7 @@ client.global.set("auth_token", response.body.access_token);
 %}
 
 ### Create Matchable Listing (Seller)
-POST http://localhost:8083/api/listings
+POST http://localhost:8082/api/listings
 Content-Type: application/json
 Authorization: Bearer {{auth_token}}
 

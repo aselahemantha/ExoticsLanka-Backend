@@ -33,8 +33,16 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
-	// Note: You would theoretically run migrations here exactly like auth-service
-	// repository.RunMigrations(context.Background(), dbPool, "sql/migrations")
+	// 2.1 Run Migrations
+	migrationDir := "sql/migrations"
+	if _, err := os.Stat(migrationDir); os.IsNotExist(err) {
+		// Fallback for local development
+		migrationDir = "services/user-service/sql/migrations"
+	}
+
+	if err := repository.RunMigrations(context.Background(), dbPool, migrationDir); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+	}
 
 	// 3. Initialize Layers
 	userRepo := repository.NewPostgresUserRepository(dbPool)

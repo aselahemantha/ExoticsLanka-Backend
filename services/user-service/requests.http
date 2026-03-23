@@ -2,11 +2,11 @@
 # @token = <insert_jwt_token_here>
 
 ### Get Current User Profile
-GET http://localhost:8091/api/users/me
+GET http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}
 
 ### Update User Profile
-PATCH http://localhost:8091/api/users/me
+PATCH http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -17,7 +17,7 @@ Content-Type: application/json
 }
 
 ### Request Verification
-POST http://localhost:8091/api/users/me/verification
+POST http://localhost:8093/api/users/me/verification
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
@@ -26,5 +26,5 @@ Content-Type: application/json
 }
 
 ### Delete Account
-DELETE http://localhost:8091/api/users/me
+DELETE http://localhost:8093/api/users/me
 Authorization: Bearer {{token}}

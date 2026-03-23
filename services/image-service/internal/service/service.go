@@ -140,10 +140,21 @@ func (s *Service) UploadUserAvatar(ctx context.Context, userID string, file mult
 	if err != nil {
 		return "", err
 	}
-
 	if oldPublicID != "" {
 		_ = s.storage.DeleteFile(ctx, oldPublicID)
 	}
 
 	return url, nil
+}
+
+func (s *Service) SetCoverImage(ctx context.Context, listingID string, userID string, imageID string) error {
+	ownerID, err := s.repo.GetListingOwner(ctx, listingID)
+	if err != nil {
+		return err
+	}
+	if ownerID != userID {
+		return fmt.Errorf("unauthorized")
+	}
+
+	return s.repo.SetCoverImage(ctx, listingID, imageID)
 }

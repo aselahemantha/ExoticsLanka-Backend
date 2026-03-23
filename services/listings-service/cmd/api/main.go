@@ -33,6 +33,17 @@ func main() {
 	}
 	log.Println("Connected to PostgreSQL")
 
+	// 2.1 Run Migrations
+	migrationDir := "sql/migrations"
+	if _, err := os.Stat(migrationDir); os.IsNotExist(err) {
+		// Fallback for local development if run from root or different depths
+		migrationDir = "services/listings-service/sql/migrations"
+	}
+
+	if err := repository.RunMigrations(context.Background(), dbPool, migrationDir); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+	}
+
 	// 3. Initialize Layers
 	repo := repository.NewPostgresListingRepository(dbPool)
 	uc := usecase.NewListingUseCase(repo)

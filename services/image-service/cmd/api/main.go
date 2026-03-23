@@ -63,6 +63,7 @@ func main() {
 		{
 			listings.POST("", h.UploadListingImage)
 			listings.PUT("/reorder", h.ReorderListingImages)
+			listings.PUT("/:imageId/primary", h.SetCoverImage)
 			listings.DELETE("/:imageId", h.DeleteListingImage)
 		}
 
