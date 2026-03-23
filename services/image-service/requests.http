@@ -44,7 +44,7 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="image"; filename="car_image.jpg"
 Content-Type: image/jpeg
 
-< ./test_image.jpg
+< ./test_car.png
 --WebAppBoundary--
 
 > {%
@@ -75,5 +75,5 @@ Content-Type: multipart/form-data; boundary=WebAppBoundary
 Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
 Content-Type: image/jpeg
 
-< ./test_avatar.jpg
+< ./test_car.png
 --WebAppBoundary--
