@@ -1,0 +1,51 @@
+steps:
+  # 1. Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      [
+        'build',
+        '-t',
+        '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE:$COMMIT_SHA',
+        '-f',
+        '$_DOCKERFILE_PATH',
+        '$_SERVICE_PATH'
+      ]
+
+  # 2. Push the container image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE:$COMMIT_SHA']
+
+  # 3. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      [
+        'run',
+        'deploy',
+        '$_SERVICE',
+        '--image',
+        '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE:$COMMIT_SHA',
+        '--region',
+        '$_REGION',
+        '--platform',
+        'managed',
+        '--allow-unauthenticated',
+        '--vpc-connector',
+        '$_VPC_CONNECTOR_NAME',
+        '--set-secrets',
+        'DATABASE_URL=DATABASE_URL:latest,REDIS_URL=REDIS_URL:latest,JWT_SECRET=JWT_SECRET:latest,CLOUDINARY_URL=CLOUDINARY_URL:latest'
+      ]
+
+images:
+  - '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE:$COMMIT_SHA'
+
+substitutions:
+  _REGION: us-central1
+  _REPOSITORY: exotics-lanka-repo
+  _SERVICE: auth-service
+  _SERVICE_PATH: services/auth-service
+  _DOCKERFILE_PATH: services/auth-service/Dockerfile
+  _VPC_CONNECTOR_NAME: exotics-lanka-connector
+
+options:
+  logging: CLOUD_LOGGING_ONLY
