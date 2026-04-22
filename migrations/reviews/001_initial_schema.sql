@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS reviews (
     id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    listing_id          UUID REFERENCES car_listings(id) ON DELETE SET NULL, -- Nullable if listing deleted
+    listing_id          UUID REFERENCES listings(id) ON DELETE SET NULL, -- Nullable if listing deleted
     seller_id           UUID NOT NULL, -- Referenced from users table
     buyer_id            UUID NOT NULL, -- Referenced from users table
     

@@ -51,8 +51,8 @@ func (r *postgresRepository) GetDailyEngagement(ctx context.Context, dealerID st
 			COUNT(DISTINCT session_id) as unique_viewers, -- Approximation using session for unique
 			COUNT(*) FILTER (WHERE event_type = 'share') as total_shares
 		FROM listing_views lv
-		JOIN car_listings cl ON lv.listing_id = cl.id
-		WHERE cl.user_id = $1 AND DATE(lv.created_at) = $2
+		JOIN listings cl ON lv.listing_id = cl.id
+		WHERE cl.seller_id = $1 AND DATE(lv.created_at) = $2
 	`, dealerID, date).Scan(&stats.TotalViews, &stats.UniqueViewers, &stats.TotalShares)
 	if err != nil {
 		return nil, err
@@ -61,9 +61,9 @@ func (r *postgresRepository) GetDailyEngagement(ctx context.Context, dealerID st
 	// Query Favorites (Favorites Service Table - Shared DB)
 	err = r.db.QueryRow(ctx, `
 		SELECT COUNT(*)
-		FROM favorites f
-		JOIN car_listings cl ON f.listing_id = cl.id
-		WHERE cl.user_id = $1 AND DATE(f.created_at) = $2
+		FROM user_favorites f
+		JOIN listings cl ON f.listing_id = cl.id
+		WHERE cl.seller_id = $1 AND DATE(f.created_at) = $2
 	`, dealerID, date).Scan(&stats.TotalFavorites)
 	if err != nil {
 		return nil, err
@@ -100,8 +100,8 @@ func (r *postgresRepository) GetDailyConversions(ctx context.Context, dealerID s
 	err = r.db.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM listing_views lv
-		JOIN car_listings cl ON lv.listing_id = cl.id
-		WHERE cl.user_id = $1 AND DATE(lv.created_at) = $2 AND lv.event_type = 'phone_click'
+		JOIN listings cl ON lv.listing_id = cl.id
+		WHERE cl.seller_id = $1 AND DATE(lv.created_at) = $2 AND lv.event_type = 'phone_click'
 	`, dealerID, date).Scan(&stats.PhoneReveals)
 	if err != nil {
 		return nil, err
@@ -115,11 +115,11 @@ func (r *postgresRepository) GetInventoryMetrics(ctx context.Context, dealerID s
 	err := r.db.QueryRow(ctx, `
 		SELECT 
 			COUNT(*) as count,
-			COALESCE(SUM(price), 0) as total_value,
-			COALESCE(AVG(health_score), 0) as avg_health, -- Assuming health_score exists on listings
-			COALESCE(AVG(EXTRACT(DAY FROM NOW() - created_at)), 0) as avg_days
-		FROM car_listings
-		WHERE user_id = $1 AND status = 'active'
+			COALESCE(SUM(price), 0)::float8 as total_value,
+			COALESCE(AVG(health_score), 0)::float8 as avg_health,
+			COALESCE(AVG(EXTRACT(DAY FROM NOW() - created_at)), 0)::int as avg_days
+		FROM listings
+		WHERE seller_id = $1 AND status = 'active'
 	`, dealerID).Scan(&stats.TotalInventory, &stats.TotalValue, &stats.ReviewScore, &stats.AvgDaysToSell)
 	// Mapping: ReviewScore is placeholder for AvgHealth here just to fit struct.
 	// Real implementation would map accurately.

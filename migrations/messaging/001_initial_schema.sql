@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS conversations (
     id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    listing_id              UUID REFERENCES car_listings(id) ON DELETE SET NULL,
+    listing_id              UUID REFERENCES listings(id) ON DELETE SET NULL,
     buyer_id                UUID NOT NULL, -- Referenced from users table
     seller_id               UUID NOT NULL, -- Referenced from users table
     

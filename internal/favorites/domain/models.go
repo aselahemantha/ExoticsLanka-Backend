@@ -16,7 +16,6 @@ type Pagination struct {
 
 // Favorite represents a user's favorite listing
 type Favorite struct {
-	ID        uuid.UUID `json:"id"`
 	UserID    uuid.UUID `json:"userId"`
 	ListingID uuid.UUID `json:"listingId"`
 	CreatedAt time.Time `json:"createdAt"`
@@ -44,7 +43,6 @@ type FavoriteListingDetails struct {
 // API Models
 
 type AddFavoriteResponse struct {
-	ID        uuid.UUID `json:"id"`
 	ListingID uuid.UUID `json:"listingId"`
 	CreatedAt time.Time `json:"createdAt"`
 }

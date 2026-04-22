@@ -16,6 +16,8 @@ type User struct {
 	EmailVerified       bool       `json:"email_verified" db:"email_verified"`
 	EmailVerifiedAt     *time.Time `json:"email_verified_at,omitempty" db:"email_verified_at"`
 	Role                string     `json:"role" db:"role"` // buyer, seller, dealer, admin, super_admin
+	Name                *string    `json:"name" db:"name"`
+	Phone               *string    `json:"phone" db:"phone"`
 	TwoFactorEnabled    bool       `json:"two_factor_enabled" db:"two_factor_enabled"`
 	TwoFactorSecret     *string    `json:"-" db:"two_factor_secret"`
 	FailedLoginAttempts int        `json:"-" db:"failed_login_attempts"`
@@ -120,6 +122,9 @@ type AuthUseCase interface {
 type RegisterRequest struct {
 	Email     string `json:"email" binding:"required,email"`
 	Password  string `json:"password" binding:"required,min=8"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Phone     string `json:"phone"`
 	Role      string `json:"role"`
 	IPAddress string `json:"-"`
 	UserAgent string `json:"-"`
@@ -142,6 +147,8 @@ type LoginResponse struct {
 type UserResponse struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
+	Name      *string   `json:"name,omitempty"`
+	Phone     *string   `json:"phone,omitempty"`
 	Role      string    `json:"role"`
 	Verified  bool      `json:"verified"`
 	CreatedAt time.Time `json:"createdAt"`

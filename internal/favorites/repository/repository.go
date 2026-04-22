@@ -36,7 +36,7 @@ func (r *postgresRepository) ClearAllFavorites(ctx context.Context, userID uuid.
 	defer tx.Rollback(ctx)
 
 	// 1. Get all listing IDs to decrement counts
-	rows, err := tx.Query(ctx, "SELECT listing_id FROM favorites WHERE user_id = $1", userID)
+	rows, err := tx.Query(ctx, "SELECT listing_id FROM user_favorites WHERE user_id = $1", userID)
 	if err != nil {
 		return 0, err
 	}
@@ -54,8 +54,8 @@ func (r *postgresRepository) ClearAllFavorites(ctx context.Context, userID uuid.
 		return 0, nil
 	}
 
-	// 2. Delete favorites
-	cmdTag, err := tx.Exec(ctx, "DELETE FROM favorites WHERE user_id = $1", userID)
+	// 2. Delete user_favorites
+	cmdTag, err := tx.Exec(ctx, "DELETE FROM user_favorites WHERE user_id = $1", userID)
 	if err != nil {
 		return 0, err
 	}
@@ -63,9 +63,9 @@ func (r *postgresRepository) ClearAllFavorites(ctx context.Context, userID uuid.
 
 	// 3. Decrement listing counts
 	// We can do this in a loop or a single update. A single update with ANY is more efficient but requires array support helper.
-	// For simplicity with pgx and standard SQL, iterating is acceptable given the likely small number of favorites per user,
+	// For simplicity with pgx and standard SQL, iterating is acceptable given the likely small number of user_favorites per user,
 	// OR we can use the ANY($1) syntax if we convert slice to array.
-	_, err = tx.Exec(ctx, "UPDATE car_listings SET favorites_count = GREATEST(favorites_count - 1, 0) WHERE id = ANY($1)", listingIDs)
+	_, err = tx.Exec(ctx, "UPDATE listings SET favorites = GREATEST(favorites - 1, 0) WHERE id = ANY($1)", listingIDs)
 	if err != nil {
 		return 0, err
 	}
@@ -86,7 +86,7 @@ func (r *postgresRepository) AddFavorite(ctx context.Context, userID, listingID 
 
 	// 1. Check if listing exists and is active
 	var status string
-	err = tx.QueryRow(ctx, "SELECT status FROM car_listings WHERE id = $1", listingID).Scan(&status)
+	err = tx.QueryRow(ctx, "SELECT status FROM listings WHERE id = $1", listingID).Scan(&status)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("listing not found")
@@ -101,10 +101,10 @@ func (r *postgresRepository) AddFavorite(ctx context.Context, userID, listingID 
 	// 2. Insert Favorite
 	fav := &domain.Favorite{}
 	err = tx.QueryRow(ctx, `
-		INSERT INTO favorites (user_id, listing_id)
+		INSERT INTO user_favorites (user_id, listing_id)
 		VALUES ($1, $2)
-		RETURNING id, user_id, listing_id, created_at
-	`, userID, listingID).Scan(&fav.ID, &fav.UserID, &fav.ListingID, &fav.CreatedAt)
+		RETURNING user_id, listing_id, created_at
+	`, userID, listingID).Scan(&fav.UserID, &fav.ListingID, &fav.CreatedAt)
 
 	if err != nil {
 		// Unique constraint violation check could be here, but handled by service logic too
@@ -112,7 +112,7 @@ func (r *postgresRepository) AddFavorite(ctx context.Context, userID, listingID 
 	}
 
 	// 3. Update Listing count
-	_, err = tx.Exec(ctx, "UPDATE car_listings SET favorites_count = favorites_count + 1 WHERE id = $1", listingID)
+	_, err = tx.Exec(ctx, "UPDATE listings SET favorites = favorites + 1 WHERE id = $1", listingID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (r *postgresRepository) RemoveFavorite(ctx context.Context, userID, listing
 	defer tx.Rollback(ctx)
 
 	// 1. Delete Favorite
-	cmdTag, err := tx.Exec(ctx, "DELETE FROM favorites WHERE user_id = $1 AND listing_id = $2", userID, listingID)
+	cmdTag, err := tx.Exec(ctx, "DELETE FROM user_favorites WHERE user_id = $1 AND listing_id = $2", userID, listingID)
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func (r *postgresRepository) RemoveFavorite(ctx context.Context, userID, listing
 	}
 
 	// 2. Decrement Listing count
-	_, err = tx.Exec(ctx, "UPDATE car_listings SET favorites_count = GREATEST(favorites_count - 1, 0) WHERE id = $1", listingID)
+	_, err = tx.Exec(ctx, "UPDATE listings SET favorites = GREATEST(favorites - 1, 0) WHERE id = $1", listingID)
 	if err != nil {
 		return err
 	}
@@ -153,20 +153,21 @@ func (r *postgresRepository) RemoveFavorite(ctx context.Context, userID, listing
 func (r *postgresRepository) GetFavorites(ctx context.Context, userID uuid.UUID, limit, offset int) ([]domain.Favorite, int64, error) {
 	// Query for total count
 	var total int64
-	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM favorites WHERE user_id = $1", userID).Scan(&total)
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM user_favorites WHERE user_id = $1", userID).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Query for favorites with listing details
+	// Query for user_favorites with listing details
 	query := `
 		SELECT 
-			f.id, f.created_at, f.listing_id,
+			f.created_at, f.listing_id,
 			cl.title, cl.make, cl.model, cl.year, cl.price, cl.mileage, cl.location, 
-			cl.status, cl.health_score, cl.views, cl.days_listed,
-			COALESCE((SELECT image_url FROM listing_images WHERE listing_id = cl.id AND is_cover = TRUE LIMIT 1), '') as cover_image
-		FROM favorites f
-		JOIN car_listings cl ON f.listing_id = cl.id
+			cl.status, cl.health_score, cl.views, 
+			EXTRACT(DAY FROM (NOW() - cl.created_at))::int as days_listed,
+			COALESCE((SELECT url FROM listing_images WHERE listing_id = cl.id AND is_primary = TRUE LIMIT 1), '') as cover_image
+		FROM user_favorites f
+		JOIN listings cl ON f.listing_id = cl.id
 		WHERE f.user_id = $1
 		ORDER BY f.created_at DESC
 		LIMIT $2 OFFSET $3
@@ -178,14 +179,14 @@ func (r *postgresRepository) GetFavorites(ctx context.Context, userID uuid.UUID,
 	}
 	defer rows.Close()
 
-	var favorites []domain.Favorite
+	var user_favorites []domain.Favorite
 	for rows.Next() {
 		var fav domain.Favorite
 		fav.UserID = userID // Explicitly set as it's input
 		details := &domain.FavoriteListingDetails{}
 
 		err := rows.Scan(
-			&fav.ID, &fav.CreatedAt, &fav.ListingID,
+			&fav.CreatedAt, &fav.ListingID,
 			&details.Title, &details.Make, &details.Model, &details.Year, &details.Price, &details.Mileage, &details.Location,
 			&details.Status, &details.HealthScore, &details.Views, &details.DaysListed,
 			&details.CoverImage,
@@ -196,15 +197,15 @@ func (r *postgresRepository) GetFavorites(ctx context.Context, userID uuid.UUID,
 
 		details.ID = fav.ListingID
 		fav.Listing = details
-		favorites = append(favorites, fav)
+		user_favorites = append(user_favorites, fav)
 	}
 
-	return favorites, total, nil
+	return user_favorites, total, nil
 }
 
 func (r *postgresRepository) CheckFavorite(ctx context.Context, userID, listingID uuid.UUID) (bool, *time.Time, error) {
 	var createdAt time.Time
-	err := r.db.QueryRow(ctx, "SELECT created_at FROM favorites WHERE user_id = $1 AND listing_id = $2", userID, listingID).Scan(&createdAt)
+	err := r.db.QueryRow(ctx, "SELECT created_at FROM user_favorites WHERE user_id = $1 AND listing_id = $2", userID, listingID).Scan(&createdAt)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return false, nil, nil
@@ -216,6 +217,6 @@ func (r *postgresRepository) CheckFavorite(ctx context.Context, userID, listingI
 
 func (r *postgresRepository) GetFavoritesCount(ctx context.Context, userID uuid.UUID) (int64, error) {
 	var count int64
-	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM favorites WHERE user_id = $1", userID).Scan(&count)
+	err := r.db.QueryRow(ctx, "SELECT COUNT(*) FROM user_favorites WHERE user_id = $1", userID).Scan(&count)
 	return count, err
 }

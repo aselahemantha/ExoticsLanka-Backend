@@ -23,28 +23,28 @@ func (r *postgresUserRepository) Create(ctx context.Context, user *domain.User) 
 	query := `
 		INSERT INTO users (
 			id, email, password_hash, status, role, 
-			email_verified, created_at, updated_at
+			name, phone, email_verified, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5, 
-			$6, $7, $8
+			$6, $7, $8, $9, $10
 		)
 	`
 	_, err := r.db.Exec(ctx, query,
 		user.ID, user.Email, user.PasswordHash, user.Status, user.Role,
-		user.EmailVerified, user.CreatedAt, user.UpdatedAt,
+		user.Name, user.Phone, user.EmailVerified, user.CreatedAt, user.UpdatedAt,
 	)
 	return err
 }
 
 func (r *postgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, status, role, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, status, role, name, phone, email_verified, created_at, updated_at
 		FROM users WHERE id = $1
 	`
 	var user domain.User
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Status, &user.Role,
-		&user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
+		&user.Name, &user.Phone, &user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -57,13 +57,13 @@ func (r *postgresUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*do
 
 func (r *postgresUserRepository) GetByEmail(ctx context.Context, email string) (*domain.User, error) {
 	query := `
-		SELECT id, email, password_hash, status, role, email_verified, created_at, updated_at
+		SELECT id, email, password_hash, status, role, name, phone, email_verified, created_at, updated_at
 		FROM users WHERE email = $1
 	`
 	var user domain.User
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.PasswordHash, &user.Status, &user.Role,
-		&user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
+		&user.Name, &user.Phone, &user.EmailVerified, &user.CreatedAt, &user.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

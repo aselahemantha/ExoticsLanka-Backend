@@ -66,7 +66,7 @@ func (r *postgresRepository) CheckListingExists(ctx context.Context, listingID u
 	var exists bool
 	// Checked against car_listings shared table
 	err := r.db.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM car_listings WHERE id = $1 AND status = 'active')
+		SELECT EXISTS(SELECT 1 FROM listings WHERE id = $1 AND status = 'active')
 	`, listingID).Scan(&exists)
 	return exists, err
 }
@@ -76,13 +76,16 @@ func (r *postgresRepository) GetComparisonItems(ctx context.Context, userID uuid
 	query := `
 		SELECT 
 			cl.id, cl.title,
-			(SELECT image_url FROM listing_images WHERE listing_id = cl.id AND is_cover = TRUE LIMIT 1),
+			(SELECT url FROM listing_images WHERE listing_id = cl.id AND is_primary = TRUE LIMIT 1),
 			cl.make, cl.model, cl.year, cl.price, cl.mileage,
-			cl.transmission, cl.fuel_type, cl.body_type, cl.color, cl.engine_size, cl.doors, cl.seats,
+			COALESCE(cl.transmission, ''), COALESCE(cl.fuel_type, ''), COALESCE(cl.body_type, ''), 
+			COALESCE(cl.color, ''), COALESCE(cl.engine_size, ''), 
+			COALESCE(cl.doors, 0), COALESCE(cl.seats, 0),
 			COALESCE(cl.health_score, 0), -- Handle NULL health score
-			(SELECT AVG(rating) FROM reviews WHERE seller_id = cl.user_id) -- Approximate seller rating
+			(SELECT AVG(rating) FROM reviews WHERE seller_id = cl.seller_id), -- Approximate seller rating
+			cl.features
 		FROM comparison_items ci
-		JOIN car_listings cl ON ci.listing_id = cl.id
+		JOIN listings cl ON ci.listing_id = cl.id
 		WHERE ci.user_id = $1
 		ORDER BY ci.created_at ASC
 	`
@@ -107,7 +110,7 @@ func (r *postgresRepository) GetComparisonItems(ctx context.Context, userID uuid
 			&v.ID, &v.Title, &image,
 			&make, &model, &year, &price, &mileage,
 			&trans, &fuel, &body, &color, &engine, &doors, &seats,
-			&v.HealthScore, &rating,
+			&v.HealthScore, &rating, &v.Features,
 		)
 		if err != nil {
 			return nil, err
@@ -125,13 +128,7 @@ func (r *postgresRepository) GetComparisonItems(ctx context.Context, userID uuid
 			"engineSize": engine, "doors": doors, "seats": seats,
 		}
 
-		// Fetch features separately or use array agg in main query (using separate here for simplicity/cleanliness in Go)
-		// Or update main query to JSON agg features. Let's do secondary query for features for now or just array_agg in valid SQL.
-		// Optimized approach: array_agg in main query.
-		// Updating main query is better but let's do a sub-query loop for MVP simplicity or assume empty features if complex.
-		// Let's execute feature query per item (N+1 but N<=4)
-		features, _ := r.getFeatures(ctx, v.ID)
-		v.Features = features
+		// Features are already loaded in the main query from JSONB
 
 		vehicles = append(vehicles, v)
 	}

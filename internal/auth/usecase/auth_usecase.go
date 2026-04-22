@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/aselahemantha/exoticsLanka/internal/config"
 	"github.com/aselahemantha/exoticsLanka/internal/auth/domain"
+	"github.com/aselahemantha/exoticsLanka/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -56,11 +56,14 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 	// 3. Create user
 	userID := uuid.New()
 	now := time.Now()
+	name := req.FirstName + " " + req.LastName
 	user := &domain.User{
 		ID:           userID,
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		Role:         req.Role,
+		Name:         &name,
+		Phone:        &req.Phone,
 		Status:       "pending",
 		CreatedAt:    now,
 		UpdatedAt:    now,
@@ -132,6 +135,8 @@ func (u *authUseCase) Register(ctx context.Context, req *domain.RegisterRequest)
 		User: &domain.UserResponse{
 			ID:        user.ID,
 			Email:     user.Email,
+			Name:      user.Name,
+			Phone:     user.Phone,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
 			CreatedAt: user.CreatedAt,
@@ -217,6 +222,8 @@ func (u *authUseCase) Login(ctx context.Context, req *domain.LoginRequest) (*dom
 		User: &domain.UserResponse{
 			ID:        user.ID,
 			Email:     user.Email,
+			Name:      user.Name,
+			Phone:     user.Phone,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
 			CreatedAt: user.CreatedAt,
@@ -304,6 +311,8 @@ func (u *authUseCase) RefreshToken(ctx context.Context, refreshToken string) (*d
 		User: &domain.UserResponse{
 			ID:        user.ID,
 			Email:     user.Email,
+			Name:      user.Name,
+			Phone:     user.Phone,
 			Role:      user.Role,
 			Verified:  user.EmailVerified,
 			CreatedAt: user.CreatedAt,
@@ -326,6 +335,8 @@ func (u *authUseCase) GetMe(ctx context.Context, userID uuid.UUID) (*domain.User
 	return &domain.UserResponse{
 		ID:        user.ID,
 		Email:     user.Email,
+		Name:      user.Name,
+		Phone:     user.Phone,
 		Role:      user.Role,
 		Verified:  user.EmailVerified,
 		CreatedAt: user.CreatedAt,

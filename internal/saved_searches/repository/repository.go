@@ -215,7 +215,7 @@ func (r *postgresRepository) UpdateMatchStats(ctx context.Context, id uuid.UUID,
 // --- Matching Logic ---
 
 func (r *postgresRepository) CountMatchingListings(ctx context.Context, filters domain.SearchFilters) (int, error) {
-	query := "SELECT COUNT(*) FROM car_listings WHERE status = 'active'" // Assuming 'status' column exists
+	query := "SELECT COUNT(*) FROM listings WHERE status = 'active'" // Assuming 'status' column exists
 	params := []interface{}{}
 	query, params, _ = buildFilterQuery(query, filters, params, 1)
 
@@ -227,8 +227,8 @@ func (r *postgresRepository) CountMatchingListings(ctx context.Context, filters 
 func (r *postgresRepository) GetNewListingsSince(ctx context.Context, filters domain.SearchFilters, since time.Time) ([]domain.ListingSummary, error) {
 	query := `
 		SELECT id, title, make, model, year, price, location, created_at,
-		(SELECT image_url FROM listing_images WHERE listing_id = car_listings.id AND is_cover = TRUE LIMIT 1) as cover_image
-		FROM car_listings 
+		(SELECT url FROM listing_images WHERE listing_id = listings.id AND is_primary = TRUE LIMIT 1) as cover_image
+		FROM listings 
 		WHERE status = 'active'
 	`
 	params := []interface{}{}
@@ -262,7 +262,7 @@ func (r *postgresRepository) GetNewListingsSince(ctx context.Context, filters do
 
 func (r *postgresRepository) RunSearch(ctx context.Context, filters domain.SearchFilters, page, limit int) ([]domain.ListingSummary, int64, error) {
 	// Count first
-	countQuery := "SELECT COUNT(*) FROM car_listings WHERE status = 'active'"
+	countQuery := "SELECT COUNT(*) FROM listings WHERE status = 'active'"
 	cParams := []interface{}{}
 	countQuery, cParams, _ = buildFilterQuery(countQuery, filters, cParams, 1)
 
@@ -274,8 +274,8 @@ func (r *postgresRepository) RunSearch(ctx context.Context, filters domain.Searc
 	// Fetch Data
 	query := `
 		SELECT id, title, make, model, year, price, location, created_at,
-		(SELECT image_url FROM listing_images WHERE listing_id = car_listings.id AND is_cover = TRUE LIMIT 1) as cover_image
-		FROM car_listings 
+		(SELECT url FROM listing_images WHERE listing_id = listings.id AND is_primary = TRUE LIMIT 1) as cover_image
+		FROM listings 
 		WHERE status = 'active'
 	`
 	params := []interface{}{}
