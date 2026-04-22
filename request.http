@@ -1,0 +1,461 @@
+@base_url = http://localhost:8080/api
+
+### Health Check
+GET http://localhost:8080/health
+
+###############################################################################
+# AUTH MODULE
+###############################################################################
+
+### Register User
+POST {{base_url}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "+94771234567"
+}
+
+### Login User
+POST {{base_url}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+> {%
+client.global.set("access_token", response.body.data.accessToken);
+client.global.set("refresh_token", response.body.data.refreshToken);
+%}
+
+### Get Me
+GET {{base_url}}/auth/me
+Authorization: Bearer {{access_token}}
+
+### Refresh Token
+POST {{base_url}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refresh_token": "{{refresh_token}}"
+}
+
+> {%
+client.global.set("access_token", response.body.data.accessToken);
+%}
+
+### Change Password
+POST {{base_url}}/auth/change-password
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+    "current_password": "Password123!",
+    "new_password": "NewPassword123!"
+}
+
+### Forgot Password
+POST {{base_url}}/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Logout
+POST {{base_url}}/auth/logout
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# USERS MODULE
+###############################################################################
+
+### Get Profile
+GET {{base_url}}/users/me
+Authorization: Bearer {{access_token}}
+
+### Update Profile
+PATCH {{base_url}}/users/me
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "firstName": "John Updated",
+  "lastName": "Doe Updated"
+}
+
+### Request Verification
+POST {{base_url}}/users/me/verification
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "documentType": "NIC",
+  "documentNumber": "123456789V",
+  "documentImage": "http://example.com/nic.jpg"
+}
+
+###############################################################################
+# LISTINGS MODULE
+###############################################################################
+
+### Get All Listings
+GET {{base_url}}/listings?page=1&limit=10
+
+### Get Single Listing
+# @listing_id = <insert-listing-uuid>
+GET {{base_url}}/listings/{{listing_id}}
+
+### Create Listing
+POST {{base_url}}/listings
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "title": "Luxury SUV 2024",
+  "make": "Range Rover",
+  "model": "Vogue",
+  "year": 2024,
+  "price": 85000000,
+  "mileage": 500,
+  "condition": "new",
+  "location": "Colombo",
+  "description": "Mint condition Range Rover Vogue.",
+  "features": ["Sunroof", "Leather Seats", "4WD"]
+}
+
+> {%
+client.global.set("listing_id", response.body.data.id);
+%}
+
+### Update Listing
+PATCH {{base_url}}/listings/{{listing_id}}
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "price": 84000000
+}
+
+### Delete Listing
+DELETE {{base_url}}/listings/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Get Featured Listings
+GET {{base_url}}/listings/featured
+
+### Get Trending Listings
+GET {{base_url}}/listings/trending
+
+### Get Brands
+GET {{base_url}}/brands
+
+### Get Models
+GET {{base_url}}/models?brand=Range%20Rover
+
+### Increment View
+POST {{base_url}}/listings/{{listing_id}}/view
+
+###############################################################################
+# IMAGE MODULE
+###############################################################################
+
+### Upload Listing Image
+POST {{base_url}}/listings/{{listing_id}}/images
+Authorization: Bearer {{access_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="image"; filename="car.jpg"
+Content-Type: image/jpeg
+
+< ./car.jpg
+--WebAppBoundary--
+
+### Reorder Images
+PUT {{base_url}}/listings/{{listing_id}}/images/reorder
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "imageIDs": ["uuid1", "uuid2"]
+}
+
+### Set Cover Image
+PUT {{base_url}}/listings/{{listing_id}}/images/{{image_id}}/primary
+Authorization: Bearer {{access_token}}
+
+### Delete Listing Image
+DELETE {{base_url}}/listings/{{listing_id}}/images/{{image_id}}
+Authorization: Bearer {{access_token}}
+
+### Upload User Avatar
+PUT {{base_url}}/users/me/avatar
+Authorization: Bearer {{access_token}}
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="avatar"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./avatar.jpg
+--WebAppBoundary--
+
+###############################################################################
+# MESSAGING MODULE
+###############################################################################
+
+### Get Conversations
+GET {{base_url}}/conversations
+Authorization: Bearer {{access_token}}
+
+### Create Conversation
+POST {{base_url}}/conversations
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "seller-uuid",
+  "initialMessage": "Hi, is this still available?"
+}
+
+### Send Message
+POST {{base_url}}/conversations/{{conversation_id}}/messages
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "content": "I'm very interested in this car."
+}
+
+### Mark Conversation as Read
+PUT {{base_url}}/conversations/{{conversation_id}}/read
+Authorization: Bearer {{access_token}}
+
+### Get Unread Count
+GET {{base_url}}/messages/unread-count
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# FAVORITES MODULE
+###############################################################################
+
+### Add Favorite
+POST {{base_url}}/favorites/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Remove Favorite
+DELETE {{base_url}}/favorites/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Get Favorites
+GET {{base_url}}/favorites
+Authorization: Bearer {{access_token}}
+
+### Check Favorite Status
+GET {{base_url}}/favorites/check/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Get Favorites Count
+GET {{base_url}}/favorites/count
+Authorization: Bearer {{access_token}}
+
+### Clear All Favorites
+DELETE {{base_url}}/favorites
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# COMPARISON MODULE
+###############################################################################
+
+### Add to Comparison
+POST {{base_url}}/comparison/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Remove from Comparison
+DELETE {{base_url}}/comparison/{{listing_id}}
+Authorization: Bearer {{access_token}}
+
+### Get Comparison List
+GET {{base_url}}/comparison
+Authorization: Bearer {{access_token}}
+
+### Compare View
+GET {{base_url}}/comparison/compare
+Authorization: Bearer {{access_token}}
+
+### Clear Comparison
+DELETE {{base_url}}/comparison
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# CONTACT MODULE
+###############################################################################
+
+### Submit Inquiry (Public)
+POST {{base_url}}/contact
+Content-Type: application/json
+
+{
+  "name": "Jane Smith",
+  "email": "jane@example.com",
+  "phone": "0779876543",
+  "subject": "general",
+  "message": "I want to know about membership options."
+}
+
+### Get Inquiries (Admin)
+GET {{base_url}}/contact?status=pending
+Authorization: Bearer {{access_token}}
+
+### Respond to Inquiry (Admin)
+PUT {{base_url}}/contact/{{inquiry_id}}
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "status": "responded",
+  "adminResponse": "Thank you for your inquiry. We will contact you soon."
+}
+
+### Get Contact Stats (Admin)
+GET {{base_url}}/contact/stats
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# REPORTS MODULE
+###############################################################################
+
+### Submit Report
+POST {{base_url}}/reports
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "listingId": "{{listing_id}}",
+  "reason": "misleading",
+  "details": "The price is too low to be true."
+}
+
+### Get Reports (Admin)
+GET {{base_url}}/reports?status=pending
+Authorization: Bearer {{access_token}}
+
+### Resolve Report (Admin)
+PUT {{base_url}}/reports/{{report_id}}
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "status": "resolved",
+  "adminNotes": "Confirmed misleading price.",
+  "actionTaken": "listing_removed"
+}
+
+###############################################################################
+# SAVED SEARCHES MODULE
+###############################################################################
+
+### Create Saved Search
+POST {{base_url}}/searches
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "name": "Cheap SUVs",
+  "filters": {
+    "make": "Toyota",
+    "priceMax": 5000000
+  }
+}
+
+### Get Saved Searches
+GET {{base_url}}/searches
+Authorization: Bearer {{access_token}}
+
+### Check for New Matches
+POST {{base_url}}/searches/{{search_id}}/check
+Authorization: Bearer {{access_token}}
+
+### Run Saved Search
+POST {{base_url}}/searches/{{search_id}}/run
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# REVIEWS MODULE
+###############################################################################
+
+### Create Review
+POST {{base_url}}/reviews
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "listingId": "{{listing_id}}",
+  "sellerId": "seller-uuid",
+  "rating": 5,
+  "title": "Excellent condition",
+  "comment": "Car was exactly as described."
+}
+
+### Get Seller Reviews
+GET {{base_url}}/reviews/seller/{{seller_id}}
+
+### Toggle Helpful Vote
+POST {{base_url}}/reviews/{{review_id}}/helpful
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# ANALYTICS MODULE
+###############################################################################
+
+### Track Event
+POST {{base_url}}/analytics/track
+Content-Type: application/json
+
+{
+  "listingId": "{{listing_id}}",
+  "eventType": "view",
+  "sessionId": "session-123"
+}
+
+### Get Dashboard Overview
+GET {{base_url}}/analytics/overview?period=30d
+Authorization: Bearer {{access_token}}
+
+### Get Insights
+GET {{base_url}}/analytics/insights
+Authorization: Bearer {{access_token}}
+
+### Get Inventory Performance
+GET {{base_url}}/analytics/inventory
+Authorization: Bearer {{access_token}}
+
+### Trigger Aggregation Job
+POST {{base_url}}/analytics/jobs/aggregate
+Authorization: Bearer {{access_token}}
+
+###############################################################################
+# NOTIFICATIONS MODULE
+###############################################################################
+
+### Get Preferences
+GET {{base_url}}/notifications/preferences
+Authorization: Bearer {{access_token}}
+
+### Update Preferences
+PATCH {{base_url}}/notifications/preferences
+Authorization: Bearer {{access_token}}
+Content-Type: application/json
+
+{
+  "email": true,
+  "sms": false,
+  "push": true
+}
