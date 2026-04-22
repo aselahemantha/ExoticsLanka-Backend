@@ -1,112 +1,57 @@
-# API Services & Endpoints
+# API Endpoints Guide
 
-This document outlines the microservices in the ExoticsLanka backend and their relevant API endpoints. Most endpoints require an authentication token (`Authorization: Bearer <token>`).
+All API endpoints are served from the modular monolith on a single port (default: `8080`). All routes are prefixed with `/api`.
 
-## 1. Auth Service
-Port: `8081`
+## Base URL
+`http://localhost:8080/api`
 
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login to get access tokens
-- `GET /api/auth/me` - Get current user info (Protected)
-- `POST /api/auth/refresh` - Refresh access token
-- `POST /api/auth/change-password` - Change user password
-- `POST /api/auth/logout` - Logout user
-- `POST /api/auth/forgot-password` - Request password reset
+## Authentication
+Most endpoints require a Bearer token in the `Authorization` header.
+`Authorization: Bearer <access_token>`
 
-## 2. User/Profile Service
-Port: `8082`
+---
 
-- `GET /api/users/me` - Get current user profile
-- `PATCH /api/users/me` - Update user profile
-- `POST /api/users/me/verification` - Request seller/dealer verification
-- `DELETE /api/users/me` - Delete user account
+### 1. Auth Module
+- `POST /auth/register` - New user registration
+- `POST /auth/login` - Returns `accessToken` and `refreshToken`
+- `GET /auth/me` - Current user information
+- `POST /auth/refresh` - Refresh access token
+- `POST /auth/logout` - Revoke session
+- `POST /auth/forgot-password` - Trigger recovery email
 
-## 3. Listings Service
-Port: `8083`
+### 2. Listings Module
+- `GET /listings` - Search and filter listings
+- `GET /listings/:id` - Detailed listing view
+- `POST /listings` - Create new listing (Protected)
+- `PATCH /listings/:id` - Update listing (Owner)
+- `DELETE /listings/:id` - Remove listing (Owner)
+- `GET /brands` - List available makes
+- `GET /models` - List models for a make
 
-- `POST /api/listings` - Create a new listing
-- `GET /api/listings` - Get all listings (supports search & filter via query params)
-- `GET /api/listings/{id}` - Get listing by ID
-- `PATCH /api/listings/{id}` - Update listing
-- `DELETE /api/listings/{id}` - Delete listing
-- `GET /api/listings/featured` - Get featured listings
-- `GET /api/listings/trending` - Get trending listings
-- `GET /api/brands` - Get available car brands
-- `GET /api/models?brand={brand}` - Get models for a given brand
-- `POST /api/listings/{id}/view` - Increment listing view counter
-- `GET /api/users/me/listings` - Get the user's created listings
-- `POST /api/listings/{id}/favorite` - Add a listing to favorites
-- `DELETE /api/listings/{id}/favorite` - Remove a listing from favorites
-- `GET /api/users/me/favorites` - Get all of the user's favorited listings
-- `POST /api/listings/{id}/reports` - Submit a report for moderation
+### 3. Messaging Module
+- `GET /conversations` - List user chats
+- `POST /conversations` - Start new chat on a listing
+- `POST /conversations/:id/messages` - Send a message
+- `PUT /conversations/:id/read` - Mark as read
 
-## 4. Reviews Service
-Port: `8085`
+### 4. Image Module
+- `POST /listings/:id/images` - Upload images
+- `PUT /listings/:id/images/reorder` - Set display order
+- `PUT /users/me/avatar` - Update profile picture
 
-- `POST /api/reviews` - Create a new review
-- `GET /api/reviews/seller/{seller_id}` - Get reviews for a seller
-- `GET /api/reviews/seller/{seller_id}/stats` - Get seller review statistics
-- `POST /api/reviews/{review_id}/helpful` - Mark review as helpful
-- `POST /api/reviews/{review_id}/response` - Respond to a review (Seller)
-- `POST /api/reviews/{review_id}/photos` - Add photos to a review
-- `DELETE /api/reviews/{review_id}` - Delete a review
+### 5. Favorites & Comparison
+- `POST /favorites/:listingId` - Add to watchlist
+- `GET /favorites` - List watchlisted items
+- `POST /comparison/:listingId` - Add to compare list
+- `GET /comparison/compare` - Side-by-side view
 
-## 5. Messaging Service
-Port: `8086`
+### 6. Admin & Support
+- `POST /contact` - Public support inquiry
+- `GET /contact` - List inquiries (Admin)
+- `POST /reports` - Report a listing for moderation
+- `GET /reports` - View reports (Admin)
 
-- `POST /api/conversations` - Create a new conversation
-- `GET /api/conversations` - Get all user conversations
-- `GET /api/messages/unread-count` - Get total unread messages count
-- `POST /api/conversations/{conversation_id}/messages` - Reply/Send a message in a conversation
-- `PUT /api/conversations/{conversation_id}/read` - Mark a conversation as read
-- `GET /api/conversations/{conversation_id}` - Get conversation details and messages
+---
 
-## 6. Saved Searches Service
-Port: `8087`
-
-- `POST /api/searches` - Create a saved search
-- `GET /api/searches` - Get all saved searches
-- `POST /api/searches/{search_id}/run` - Run a specific saved search
-- `POST /api/searches/{search_id}/check` - Check for new matches for a search
-- `GET /api/searches/new-matches` - Get overview of all new matches
-
-## 7. Contact Service
-Port: `8089`
-
-- `POST /api/contact` - Submit a contact inquiry
-- `GET /api/contact` - Get all inquiries (Admin)
-- `GET /api/contact/{inquiry_id}` - Get inquiry details (Admin)
-- `PUT /api/contact/{inquiry_id}` - Respond to an inquiry (Admin)
-- `GET /api/contact/stats` - Get inquiry stats (Admin)
-
-## 8. Analytics Service
-Port: `8090`
-
-- `POST /api/analytics/track` - Track an event (view, contact_view, etc.)
-- `POST /api/analytics/jobs/aggregate` - Trigger analytics aggregation (Admin/Dealer)
-- `GET /api/analytics/overview` - Get dashboard overview
-- `GET /api/analytics/insights` - Get analytics insights
-- `GET /api/analytics/inventory` - Get inventory performance metrics
-
-## 9. Comparison Service
-Port: `8091`
-
-- `POST /api/comparison/{listing_id}` - Add a listing to comparison
-- `GET /api/comparison` - Get the current comparison list
-- `GET /api/comparison/check/{listing_id}` - Check if listing is in comparison
-- `GET /api/comparison/compare` - Compare view for listings
-- `DELETE /api/comparison/{listing_id}` - Remove a listing from comparison
-- `DELETE /api/comparison` - Clear comparison list
-
-## 10. Image Service
-Handles image uploads and management.
-- `POST /images/upload` *(Route format varies)* - Upload a listing image
-- `PUT /images/reorder` *(Route format varies)* - Reorder listing images
-- `DELETE /images/{imageId}` *(Route format varies)* - Delete a listing image
-- `POST /images/avatar` *(Route format varies)* - Upload user avatar profile picture
-
-## 11. Notification Service
-Handles user notification preferences and delivery.
-- `GET /notifications/preferences` *(Route format varies)* - Get notification preferences
-- `PUT /notifications/preferences` *(Route format varies)* - Update notification preferences
-- `POST /notifications/send` *(Route format varies)* - Send an internal system notification
+> [!TIP]
+> For a full list of request payloads and automated tests, refer to [request.http](../request.http) or the Postman collection in the root directory.

@@ -7,8 +7,8 @@ steps:
         '-t',
         '$_REGION-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE:$COMMIT_SHA',
         '-f',
-        '$_DOCKERFILE_PATH',
-        '$_SERVICE_PATH'
+        'Dockerfile',
+        '.'
       ]
 
   # 2. Push the container image to Artifact Registry
@@ -42,9 +42,7 @@ images:
 substitutions:
   _REGION: us-central1
   _REPOSITORY: exotics-lanka-repo
-  _SERVICE: auth-service
-  _SERVICE_PATH: services/auth-service
-  _DOCKERFILE_PATH: services/auth-service/Dockerfile
+  _SERVICE: exotics-lanka-monolith
   _VPC_CONNECTOR_NAME: exotics-lanka-connector
 
 options:

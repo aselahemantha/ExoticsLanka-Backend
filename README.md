@@ -1,117 +1,91 @@
-# Exotics Lanka Backend
+# Exotics Lanka Modular Monolith
 
-This is the backend repository for the Exotics Lanka platform, built using a modular microservices architecture with Go (Golang).
+This repository contains the backend for the Exotics Lanka platform, built as a **Modular Monolith** using Go (Golang). It combines the benefits of modularity with the simplicity of a single deployment unit.
 
 ## 🏗️ Architecture
 
-The project is structured as a Go workspace (monorepo) containing 12 independent microservices.
+The project is structured as a modular monolith, where each business domain (Auth, Listings, Messaging, etc.) is isolated within the `internal/` directory.
 
 -   **Language**: Go 1.25+
+-   **Framework**: Gin Gonic (HTTP)
 -   **Database**: PostgreSQL (Primary), Redis (Cache & Session Store)
 -   **Infrastructure**: Docker, Google Cloud Run
--   **Communication**: REST API (HTTP)
+-   **Design Pattern**: Clean Architecture (Domain-Driven Design)
 
-### Microservices
+### Modules
 
-| Service Name | Description | Port (Local) |
-| :--- | :--- | :--- |
-| `auth-service` | Authentication, User Management, Sessions | 8081 |
-| `listings-service` | Vehicle Listings, Brands, Categories | 8082 |
-| `analytics-service` | Platform analytics and metrics | - |
-| `comparison-service` | Vehicle comparison functionality | - |
-| `contact-service` | Contact forms and inquiries | - |
-| `favorites-service` | User favorites and watchlists | - |
-| `image-service` | Image processing and storage | - |
-| `messaging-service` | User-to-user messaging | - |
-| `notification-service`| Push notifications and alerts | - |
-| `reports-service` | Data reporting and exports | - |
-| `reviews-service` | User reviews and ratings | - |
-| `saved-searches` | Saved search preferences | - |
+The following modules are integrated into the monolith:
+
+| Module | Description |
+| :--- | :--- |
+| **Auth** | Authentication, RBAC, Sessions, Password Recovery |
+| **User** | Profile management, Seller verification |
+| **Listings** | Vehicle inventory, Search, Filtering |
+| **Image** | Cloudinary integration, Image reordering |
+| **Messaging** | Real-time chat between buyers and sellers |
+| **Notification**| Email (SendGrid) and SMS (Twilio) alerts |
+| **Reviews** | Ratings and feedback for sellers |
+| **Favorites** | User watchlists |
+| **Comparison** | Vehicle side-by-side comparison |
+| **Contact** | Inquiry management and lead tracking |
+| **Reports** | Moderation and listing reporting |
+| **Saved Searches**| Automated matching for user preferences |
+| **Analytics** | Platform-wide metrics and daily aggregations |
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 -   **Go**: Version 1.25 or higher
--   **Docker** & **Docker Compose**: For running infrastructure (DB, Redis).
--   **Google Cloud SDK**: For deployment.
+-   **Docker** & **Docker Compose**: For local infrastructure.
+-   **GCP SDK**: For cloud deployment.
 
 ### Local Development
 
-1.  **Clone the repository**
-    ```bash
-    git clone <repository-url>
-    cd exoticsLanka
-    ```
-
-2.  **Start Infrastructure**
-    Start PostgreSQL and Redis:
+1.  **Start Infrastructure**
+    Launch PostgreSQL and Redis using Docker Compose:
     ```bash
     docker-compose up -d
     ```
 
-3.  **Run a Service**
-    Navigate to the service directory or run from root:
+2.  **Run the Monolith**
     ```bash
-    # Example: Run Auth Service
-    go run ./services/auth-service/cmd/api/main.go
+    go run ./cmd/api/main.go
     ```
-    The service will start on its default port (usually defined in `.env` or defaults to 808x).
+    The server will start on port `8080` by default.
 
-4.  **Configuration**
-    Services use `config.LoadConfig()` to read environment variables.
-    -   `DATABASE_URL`: Connection string for PostgreSQL.
-    -   `REDIS_URL`: Connection string for Redis.
-    -   `PORT`: Port to listen on.
+3.  **Testing with HTTP Client**
+    Use [request.http](./request.http) in your IDE to test endpoints. The file includes scripts to automatically capture and reuse the `access_token` after login.
+
+4.  **Testing with Postman**
+    Import [ExoticsLanka_Monolith.postman_collection.json](./ExoticsLanka_Monolith.postman_collection.json) for a comprehensive suite of API tests.
 
 ## ☁️ Deployment
 
-The project is configured for deployment on **Google Cloud Run**.
+The project is deployed to **Google Cloud Run** using Google Cloud Build.
 
-### Prerequisites
--   A Google Cloud Project with billing enabled.
--   `gcloud` CLI authenticated (`gcloud auth login`).
-
-### Deployment Scripts
-
-We provide helper scripts in the `scripts/` directory to automate the build and deploy process.
-
-**1. Deploy a Single Service**
+### Deployment Command
 ```bash
-./scripts/deploy.sh <service-name>
-# Example:
-./scripts/deploy.sh auth-service
+gcloud builds submit --config cloudbuild.yaml .
 ```
-This script will:
--   Build the Docker image.
--   Push it to Google Artifact Registry.
--   Deploy the revision to Cloud Run.
 
-**2. Deploy All Services**
-```bash
-./scripts/deploy_all.sh
-```
-This will sequentially deploy all services found in the `services/` directory.
-
-### Docker Configuration
-Each service has a `Dockerfile` that:
--   Uses a multi-stage build (Go builder -> Alpine runner).
--   Exposes port `8080`.
--   Copies migration files if present.
+### Docker
+The monolith uses a multi-stage Docker build for optimized image size.
+-   **Build Stage**: Compiles the Go binary.
+-   **Run Stage**: Alpine-based lightweight image.
 
 ## 📂 Project Structure
 
 ```
 .
-├── docker-compose.yml       # Local infrastructure (Postgres, Redis)
-├── go.work                  # Go workspace configuration
-├── scripts/                 # Automation scripts
-│   ├── deploy.sh            # Deploy single service
-│   ├── deploy_all.sh        # Deploy all services
-│   └── generate_dockerfiles.sh # Helper to create Dockerfiles
-├── services/                # Microservices source code
-│   ├── auth-service/
-│   ├── listings-service/
-│   └── ... (other services)
+├── cmd/api/main.go          # Entry point for the Monolith
+├── internal/                # Modular domains
+│   ├── auth/                # Auth logic
+│   ├── listings/            # Listings logic
+│   └── ...                  # Other modules
+├── migrations/              # SQL migration files per module
+├── request.http             # Comprehensive API test file
+├── cloudbuild.yaml          # Google Cloud Build config
+├── docker-compose.yml       # Local dev infrastructure
 └── README.md
 ```
