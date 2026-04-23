@@ -40,9 +40,9 @@ import (
 
 	// Notification Module
 	notificationHttp "github.com/aselahemantha/exoticsLanka/internal/notification/handler"
+	notificationProvider "github.com/aselahemantha/exoticsLanka/internal/notification/provider"
 	notificationRepo "github.com/aselahemantha/exoticsLanka/internal/notification/repository"
 	notificationUC "github.com/aselahemantha/exoticsLanka/internal/notification/service"
-	notificationProvider "github.com/aselahemantha/exoticsLanka/internal/notification/provider"
 
 	// Reviews Module
 	reviewsHttp "github.com/aselahemantha/exoticsLanka/internal/reviews/handler"
@@ -87,18 +87,23 @@ func main() {
 	defer cancel()
 
 	// 2. Connect to PostgreSQL
+	log.Printf("Attempting to connect to PostgreSQL...")
 	dbPool, err := common.InitDatabase(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Printf("CRITICAL ERROR: Failed to initialize database: %v", err)
+		log.Printf("App will continue to start the server for debugging purposes, but database features will fail.")
+	} else {
+		defer dbPool.Close()
 	}
-	defer dbPool.Close()
 
 	// 3. Connect to Redis
+	log.Printf("Attempting to connect to Redis...")
 	rdb, err := common.InitRedis(ctx, cfg.RedisURL)
 	if err != nil {
-		log.Fatalf("Failed to initialize Redis: %v", err)
+		log.Printf("CRITICAL ERROR: Failed to initialize Redis: %v", err)
+	} else {
+		defer rdb.Close()
 	}
-	defer rdb.Close()
 
 	// 4. Initialize External Clients
 	cldClient, err := imageStorage.NewCloudinaryClient(cfg.CloudinaryURL)
@@ -207,11 +212,11 @@ func main() {
 	// Global Health Check
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"status": "ok", 
-			"service": "monolith", 
+			"status":  "ok",
+			"service": "monolith",
 			"modules": []string{
-				"auth", "listings", "user", "image", "messaging", 
-				"notification", "reviews", "favorites", "analytics", 
+				"auth", "listings", "user", "image", "messaging",
+				"notification", "reviews", "favorites", "analytics",
 				"comparison", "contact", "reports", "saved_searches",
 			},
 		})
